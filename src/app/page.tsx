@@ -106,7 +106,7 @@ export default function Home() {
                 transition={{ delay: 0.2 }}
                 className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium"
               >
-                Zero-risk auditing for elite firms in Houston, Tampa, and Los Angeles. 
+                Built for the most demanding legal markets in Texas, Florida, and California. 
                 We isolate inefficiencies and reclaim capital with absolute technical security.
               </motion.p>
               <motion.div 
@@ -184,7 +184,7 @@ export default function Home() {
                         98.2<span className="text-slate-600">%</span>
                       </div>
                       <div className="mt-4 flex items-center gap-2 text-blue-400 text-[10px] font-bold">
-                        HOU • TAM • LAX • SFO
+                        TEXAS • FLORIDA • CALIFORNIA
                       </div>
                     </div>
                   </div>
@@ -217,11 +217,13 @@ export default function Home() {
                         <div className="flex gap-1">
                           <span className="px-1.5 py-0.5 border border-green-500/30 bg-green-500/10 text-green-500 text-[8px] font-black tracking-widest uppercase">CCPA</span>
                           <span className="px-1.5 py-0.5 border border-green-500/30 bg-green-500/10 text-green-500 text-[8px] font-black tracking-widest uppercase">CPRA</span>
+                          <span className="px-1.5 py-0.5 border border-blue-500/30 bg-blue-500/10 text-blue-500 text-[8px] font-black tracking-widest uppercase">FL 4-1.5</span>
                         </div>
                       </div>
                       <p className="text-slate-400 text-sm leading-relaxed font-medium">
                         Sensitive legal data is processed exclusively in volatile RAM. 
                         We store zero bytes of document content on permanent disk. 
+                        Full compliance for Texas, Florida, and California firms.
                       </p>
                     </div>
                   </div>
@@ -411,15 +413,15 @@ export default function Home() {
             <h2 className="text-2xl font-black mb-16 text-center tracking-widest uppercase">Technicals FAQ</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1" className="border-slate-800">
-                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6">Compliance Standards</AccordionTrigger>
+                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6">State-Specific Compliance</AccordionTrigger>
                 <AccordionContent className="text-slate-400 text-sm leading-relaxed font-medium pb-6">
-                  We are natively built for UTBMS, CCPA, and CPRA standards. Our data sovereignty protocols exceed those required by the California and Texas legal boards.
+                  We are natively built for UTBMS, CCPA, CPRA, and Florida Rule 4-1.5 standards. Our data sovereignty protocols exceed those required by the state legal boards of California, Texas, and Florida.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2" className="border-slate-800">
-                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6">Fee Recovery Timeline</AccordionTrigger>
+                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6">Fee Recovery Intelligence</AccordionTrigger>
                 <AccordionContent className="text-slate-400 text-sm leading-relaxed font-medium pb-6">
-                  Initial spend analysis is completed within 72 hours. Full fee recovery reports are delivered via secure tunnel within 14 business days.
+                  Initial spend analysis is completed within 72 hours using proprietary intelligence for the Texas, Florida, and California legal landscapes. Full fee recovery reports are delivered via secure tunnel within 14 business days.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -435,21 +437,21 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
             </div>
-            HOUSTON: ONLINE
+            TEXAS HUB: ACTIVE
           </div>
           <div className="flex items-center gap-2.5">
             <div className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
             </div>
-            TAMPA: ONLINE
+            FLORIDA HUB: ACTIVE
           </div>
           <div className="flex items-center gap-2.5">
             <div className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
             </div>
-            LOS ANGELES: ONLINE
+            CALIFORNIA HUB: ACTIVE
           </div>
           <div className="text-slate-800 hidden lg:block">//</div>
           <div className="flex items-center gap-2.5 text-blue-500">
