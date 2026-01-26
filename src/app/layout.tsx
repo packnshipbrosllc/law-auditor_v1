@@ -17,12 +17,8 @@ export const metadata: Metadata = {
   description: "Secure, zero-retention AI auditing to recover lost legal spend and ensure UTBMS compliance. Optimized for the statewide legal markets of Texas, Florida, and California.",
   keywords: ["legal auditing", "UTBMS compliance", "legal spend recovery", "Texas legal tech", "Florida legal tech", "California legal tech", "zero-retention auditing"],
   icons: {
-    icon: [
-      { url: '/brand-icon.png?v=2', type: 'image/png' },
-    ],
-    apple: [
-      { url: '/brand-icon.png?v=2' },
-    ],
+    icon: '/icon.ico?v=2',
+    apple: '/icon.ico?v=2',
   },
   openGraph: {
     title: "LawAuditor | Precision Legal Auditing",
