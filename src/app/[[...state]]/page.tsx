@@ -132,7 +132,7 @@ export default function Home({ params }: PageProps) {
                 className="relative w-40 h-40 mx-auto mb-12"
               >
                 {/* Logo Glow Effect */}
-                <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
+                <div className="absolute inset-0 bg-gold/20 blur-3xl rounded-full" />
                 <Image 
                   src="/logo.png" 
                   alt="LawAuditor Official Logo" 
@@ -145,7 +145,7 @@ export default function Home({ params }: PageProps) {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-none border border-blue-500/20 bg-blue-500/5 text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-8"
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-none border border-gold/20 bg-gold/5 text-gold-light text-[10px] font-bold uppercase tracking-[0.2em] mb-8"
               >
                 <ShieldCheck className="w-3 h-3" />
                 Enterprise Data Processing
@@ -170,7 +170,7 @@ export default function Home({ params }: PageProps) {
               
               {/* State Indicator */}
               <div className="flex justify-center gap-4 mb-12">
-                <div className="border border-blue-600 bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest px-6 py-2">
+                <div className="border border-gold bg-gold/10 text-gold-light text-[10px] font-black uppercase tracking-widest px-6 py-2">
                   Software Active in: {getStateName(activeStateCode)}
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function Home({ params }: PageProps) {
                 className="flex flex-col sm:flex-row items-center justify-center gap-4"
               >
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-blue-600 rounded-none blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                  <div className="absolute -inset-1 bg-gold rounded-none blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                   <Button 
                     size="lg" 
                     onClick={() => {
@@ -209,7 +209,7 @@ export default function Home({ params }: PageProps) {
                         demoSection?.scrollIntoView({ behavior: 'smooth' });
                       }
                     }}
-                    className="relative bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-blue-400/20 disabled:opacity-30 disabled:cursor-not-allowed" 
+                    className="relative bg-gold hover:bg-gold-light text-[#020617] px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-gold-light/20 disabled:opacity-30 disabled:cursor-not-allowed" 
                     aria-label="Secure Analysis Request"
                   >
                     Secure Data Analysis
@@ -251,7 +251,7 @@ export default function Home({ params }: PageProps) {
                             </p>
                             <Button 
                               onClick={() => setIsVerificationModalOpen(true)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest rounded-none px-8"
+                              className="bg-gold hover:bg-gold-light text-[#020617] font-black uppercase tracking-widest rounded-none px-8"
                             >
                               Verify Professional Status
                             </Button>
@@ -269,7 +269,7 @@ export default function Home({ params }: PageProps) {
                       </div>
                       <div className="h-4 w-px bg-slate-800" />
                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                            <Activity className="w-3 h-3 text-blue-500" />
+                            <Activity className="w-3 h-3 text-gold" />
                             Data Inconsistency Feed: {getStateName(activeStateCode)}
                           </span>
                         </div>
@@ -460,12 +460,12 @@ export default function Home({ params }: PageProps) {
             <div className="flex flex-wrap justify-center gap-12 md:gap-24 items-center grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition duration-500">
               {stateMetadata.complianceRefs.map((ref) => (
                 <div key={ref} className="flex flex-col items-center gap-3">
-                  <ShieldCheck className="w-8 h-8 text-blue-500" />
+                  <ShieldCheck className="w-8 h-8 text-gold" />
                   <span className="text-[9px] font-black tracking-widest uppercase text-white text-center">{ref}</span>
                 </div>
               ))}
               <div className="flex flex-col items-center gap-3">
-                <Activity className="w-8 h-8 text-blue-500" />
+                <Activity className="w-8 h-8 text-gold" />
                 <span className="text-[9px] font-black tracking-widest uppercase text-white text-center">UTBMS Verified</span>
               </div>
             </div>
@@ -524,7 +524,7 @@ export default function Home({ params }: PageProps) {
             );
           })}
           <div className="text-slate-800 hidden lg:block">//</div>
-          <div className="flex items-center gap-2.5 text-blue-500">
+          <div className="flex items-center gap-2.5 text-gold">
             SOFTWARE_STATUS: NOMINAL
           </div>
         </div>
@@ -576,7 +576,7 @@ export default function Home({ params }: PageProps) {
             
             <div className="md:text-right space-y-4">
               <div className="flex items-center md:justify-end gap-2 text-slate-500">
-                <MapPin className="w-3 h-3 text-blue-500" />
+                <MapPin className="w-3 h-3 text-gold" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">
                   LawAuditor | {getStateName(activeStateCode)} Hub | {stateMetadata.address}
                 </span>

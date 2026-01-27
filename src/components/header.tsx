@@ -42,10 +42,10 @@ export function Header() {
             <span className="text-lg font-bold tracking-tighter text-white">LAWAUDITOR</span>
           </div>
           <div className="h-4 w-px bg-slate-800 hidden md:block" />
-          <div className="hidden md:flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+          <div className="hidden md:flex items-center gap-2 text-gold text-[10px] font-black uppercase tracking-widest">
             <div className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-gold-light"></span>
             </div>
             Active in {getStateName(activeStateCode)}
           </div>
@@ -58,7 +58,7 @@ export function Header() {
         </div>
         <div className="flex items-center gap-4">
           <a href="#demo">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none border border-blue-400/20 shadow-none">
+            <Button className="bg-gold hover:bg-gold-light text-[#020617] px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none border border-gold-light/20 shadow-none">
               Request Analysis
             </Button>
           </a>

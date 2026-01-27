@@ -16,9 +16,9 @@ export function ComplianceShields({ state }: ComplianceShieldsProps) {
       badge: `${metadata.name} Rule 4-1.5 Assistant`,
       copy: `Software assistant for fee-transparency verification. Designed for professional use in assisting with Rule 4-1.5 compliance. Address: ${SITE_CONFIG.address}.`,
       icon: ShieldCheck,
-      color: "text-blue-400",
-      borderColor: "border-blue-500/20",
-      bgColor: "bg-blue-500/5",
+      color: "text-gold",
+      borderColor: "border-gold/20",
+      bgColor: "bg-gold/5",
     },
     texas: {
       badge: `${metadata.aiActName} Compliance`,

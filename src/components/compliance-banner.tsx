@@ -11,8 +11,8 @@ export function ComplianceBanner() {
       className="bg-slate-900/50 border border-slate-800 p-4 mb-8 relative group"
     >
       <div className="flex gap-4 items-start">
-        <div className="w-8 h-8 border border-blue-500/20 bg-blue-500/5 flex items-center justify-center flex-shrink-0">
-          <Info className="w-4 h-4 text-blue-500" />
+        <div className="w-8 h-8 border border-gold/20 bg-gold/5 flex items-center justify-center flex-shrink-0">
+          <Info className="w-4 h-4 text-gold" />
         </div>
         <div>
           <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white mb-1">

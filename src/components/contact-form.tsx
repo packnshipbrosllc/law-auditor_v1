@@ -86,7 +86,7 @@ export function ContactForm() {
                 type="submit"
                 disabled={status === 'submitting'}
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-14 text-xs font-black uppercase tracking-[0.2em] rounded-none disabled:opacity-50"
+                className="bg-gold hover:bg-gold-light text-[#020617] px-8 h-14 text-xs font-black uppercase tracking-[0.2em] rounded-none disabled:opacity-50"
               >
                 {status === 'submitting' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

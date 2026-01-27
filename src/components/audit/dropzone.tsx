@@ -38,7 +38,7 @@ export function Dropzone({ onFilesAccepted, isProcessing }: DropzoneProps) {
         {...getRootProps()}
         className={`relative border-2 border-dashed transition-all duration-300 p-12 text-center cursor-pointer ${
           isDragActive 
-            ? 'border-blue-500 bg-blue-500/5' 
+            ? 'border-gold bg-gold/5' 
             : 'border-slate-800 bg-slate-900/10 hover:border-slate-700'
         } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
@@ -46,7 +46,7 @@ export function Dropzone({ onFilesAccepted, isProcessing }: DropzoneProps) {
         
         <div className="flex flex-col items-center gap-4">
           <div className={`w-16 h-16 flex items-center justify-center transition-colors ${
-            isDragActive ? 'text-blue-500' : 'text-slate-500'
+            isDragActive ? 'text-gold' : 'text-slate-500'
           }`}>
             {isProcessing ? (
               <Loader2 className="w-10 h-10 animate-spin" />
@@ -65,7 +65,7 @@ export function Dropzone({ onFilesAccepted, isProcessing }: DropzoneProps) {
           </div>
 
           <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-slate-900 border border-slate-800">
-            <ShieldCheck className="w-3 h-3 text-blue-500" />
+            <ShieldCheck className="w-3 h-3 text-gold" />
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
               Zero-Retention Encryption Active
             </span>
@@ -86,7 +86,7 @@ export function Dropzone({ onFilesAccepted, isProcessing }: DropzoneProps) {
                 className="flex items-center justify-between p-4 bg-[#020617] border border-slate-800"
               >
                 <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-blue-500" />
+                  <FileText className="w-4 h-4 text-gold" />
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest">
                       {file.name}
@@ -105,7 +105,7 @@ export function Dropzone({ onFilesAccepted, isProcessing }: DropzoneProps) {
                   </button>
                 )}
                 {isProcessing && (
-                  <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+                  <Loader2 className="w-3 h-3 text-gold animate-spin" />
                 )}
               </div>
             ))}

@@ -28,8 +28,8 @@ export function VerificationModal({ isOpen, onClose, onVerify, stateCode }: Veri
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-[#020617] border-slate-800 text-slate-50 max-w-md rounded-none">
         <DialogHeader>
-          <div className="w-12 h-12 border border-blue-500/20 bg-blue-500/5 flex items-center justify-center mb-4">
-            <ShieldAlert className="w-6 h-6 text-blue-500" />
+          <div className="w-12 h-12 border border-gold/20 bg-gold/5 flex items-center justify-center mb-4">
+            <ShieldAlert className="w-6 h-6 text-gold" />
           </div>
           <DialogTitle className="text-xl font-black uppercase tracking-tighter text-white">
             Professional Verification
@@ -62,7 +62,7 @@ export function VerificationModal({ isOpen, onClose, onVerify, stateCode }: Veri
           <Button
             onClick={handleVerify}
             disabled={!isChecked}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.2em] rounded-none h-12 disabled:opacity-30 transition-all"
+            className="w-full bg-gold hover:bg-gold-light text-[#020617] font-black uppercase tracking-[0.2em] rounded-none h-12 disabled:opacity-30 transition-all"
           >
             Access Analysis Results
           </Button>
