@@ -15,79 +15,97 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export function ContactForm() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState("");
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
 
   const onSubmit = async (data: FormData) => {
-    setIsSubmitting(true);
+    setStatus('submitting');
+    setErrorMessage("");
+    
     try {
+      console.log('[ContactForm] Submitting lead:', data.email);
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        setIsSuccess(true);
+        console.log('[ContactForm] Submission successful');
+        setStatus('success');
+        reset();
       } else {
-        console.error("Submission failed");
+        console.error('[ContactForm] Submission failed:', result.error);
+        setErrorMessage(result.error || "Submission failed. Please try again.");
+        setStatus('error');
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-    } finally {
-      setIsSubmitting(false);
+      console.error('[ContactForm] Unexpected error:', error);
+      setErrorMessage("A network error occurred. Please check your connection.");
+      setStatus('error');
     }
   };
 
   return (
     <div className="w-full max-w-xl mx-auto">
       <AnimatePresence mode="wait">
-        {!isSuccess ? (
-          <motion.form
-            key="form"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col sm:flex-row gap-0 border border-slate-800"
-          >
-            <div className="flex-1 flex flex-col">
-              <input
-                {...register("email")}
-                type="email"
-                placeholder="WORK EMAIL"
-                aria-label="Work Email"
-                aria-invalid={!!errors.email}
-                className="w-full h-14 px-6 bg-[#020617] text-white placeholder:text-slate-600 focus:outline-none font-bold text-xs tracking-widest"
-                required
-              />
-              {errors.email && (
-                <span className="text-red-500 text-[10px] font-bold uppercase tracking-widest px-6 pb-2 bg-[#020617]">
-                  {errors.email.message}
-                </span>
-              )}
-            </div>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-14 text-xs font-black uppercase tracking-[0.2em] rounded-none disabled:opacity-50"
+        {status !== 'success' ? (
+          <motion.div key="form-container">
+            <motion.form
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onSubmit={handleSubmit(onSubmit)}
+              className={`flex flex-col sm:flex-row gap-0 border ${status === 'error' ? 'border-red-500/50' : 'border-slate-800'}`}
             >
-              {isSubmitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Request Audit"
-              )}
-            </Button>
-          </motion.form>
+              <div className="flex-1 flex flex-col">
+                <input
+                  {...register("email")}
+                  type="email"
+                  placeholder="WORK EMAIL"
+                  aria-label="Work Email"
+                  aria-invalid={!!errors.email}
+                  disabled={status === 'submitting'}
+                  className="w-full h-14 px-6 bg-[#020617] text-white placeholder:text-slate-600 focus:outline-none font-bold text-xs tracking-widest disabled:opacity-50"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={status === 'submitting'}
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-14 text-xs font-black uppercase tracking-[0.2em] rounded-none disabled:opacity-50"
+              >
+                {status === 'submitting' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Request Analysis"
+                )}
+              </Button>
+            </motion.form>
+            
+            {(errors.email || status === 'error') && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-500 text-[10px] font-bold uppercase tracking-widest mt-4 text-left px-2"
+              >
+                {errors.email?.message || errorMessage}
+              </motion.div>
+            )}
+          </motion.div>
         ) : (
           <motion.div
             key="success"
