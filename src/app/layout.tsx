@@ -12,15 +12,19 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { SITE_CONFIG, STATE_METADATA } from "@/config/siteConfig";
+
+const primaryMetadata = STATE_METADATA[SITE_CONFIG.primaryState === 'TX' ? 'texas' : SITE_CONFIG.primaryState === 'CA' ? 'california' : 'florida'];
+
 export const metadata: Metadata = {
-  title: "LawAuditor | Enterprise Legal Data Analysis for Texas, Florida, & California",
-  description: "Secure, zero-retention AI analysis to recover lost legal spend and ensure UTBMS compliance. Optimized for the statewide legal markets of Texas, Florida, and California.",
-  keywords: ["legal data analysis", "UTBMS compliance", "legal spend recovery", "Texas legal tech", "Florida legal tech", "California legal tech", "zero-retention AI analysis"],
+  title: `${SITE_CONFIG.companyName} | Enterprise Data Analysis for ${primaryMetadata.name}`,
+  description: `Secure, zero-retention AI analysis to recover lost legal spend. Optimized for ${primaryMetadata.name} regulatory standards.`,
+  keywords: ["legal data analysis", "UTBMS compliance", "legal spend recovery", `${primaryMetadata.name} legal tech`, "zero-retention AI analysis"],
   openGraph: {
-    title: "LawAuditor | Precision Data Analysis",
+    title: `${SITE_CONFIG.companyName} | Precision Data Analysis`,
     description: "Recover lost legal spend with zero data risk.",
     url: "https://lawauditor.com",
-    siteName: "LawAuditor",
+    siteName: SITE_CONFIG.companyName,
     type: "website",
   },
 };

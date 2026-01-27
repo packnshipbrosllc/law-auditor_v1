@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Shield, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
+import { SITE_CONFIG } from "@/config/siteConfig";
+
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-[#020617] text-slate-50 selection:bg-blue-600 selection:text-white font-sans antialiased relative">
@@ -66,8 +68,8 @@ export default function TermsOfService() {
 
             <section className="space-y-4 border-t border-slate-800 pt-12">
               <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest leading-loose">
-                Last Updated: January 2026. Entity: LawAuditor (A Technology Platform). <br/>
-                Address: 1809 S Street, Suite 101, #204, Sacramento, CA 95811.
+                Last Updated: January 2026. Entity: {SITE_CONFIG.entityName}. <br/>
+                Address: {SITE_CONFIG.address}.
               </p>
             </section>
           </div>

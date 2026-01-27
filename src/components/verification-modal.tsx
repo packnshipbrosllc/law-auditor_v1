@@ -4,15 +4,18 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ShieldAlert } from "lucide-react";
+import { getActiveStateMetadata } from "@/config/siteConfig";
 
 interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onVerify: () => void;
+  stateCode?: string;
 }
 
-export function VerificationModal({ isOpen, onClose, onVerify }: VerificationModalProps) {
+export function VerificationModal({ isOpen, onClose, onVerify, stateCode }: VerificationModalProps) {
   const [isChecked, setIsChecked] = useState(false);
+  const metadata = getActiveStateMetadata(stateCode);
 
   const handleVerify = () => {
     if (isChecked) {
@@ -29,10 +32,10 @@ export function VerificationModal({ isOpen, onClose, onVerify }: VerificationMod
             <ShieldAlert className="w-6 h-6 text-blue-500" />
           </div>
           <DialogTitle className="text-xl font-black uppercase tracking-tighter text-white">
-            Professional User Verification
+            Professional Verification
           </DialogTitle>
           <DialogDescription className="text-slate-400 text-sm font-medium leading-relaxed pt-2">
-            In accordance with CA AB 316 (2026), we require all users to acknowledge the nature of our automated analysis tools.
+            {metadata.disclosureText}
           </DialogDescription>
         </DialogHeader>
 

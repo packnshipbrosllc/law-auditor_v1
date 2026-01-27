@@ -1,5 +1,6 @@
 import { ShieldCheck, ShieldAlert, Shield } from "lucide-react";
 import { motion } from "framer-motion";
+import { getActiveStateMetadata, SITE_CONFIG } from "@/config/siteConfig";
 
 type StateType = "texas" | "florida" | "california";
 
@@ -7,34 +8,36 @@ interface ComplianceShieldsProps {
   state: StateType;
 }
 
-const STATE_CONTENT = {
-  florida: {
-    badge: "Florida Rule 4-1.5 Software Assistant",
-    copy: "Software assistant for fee-transparency verification. Designed for professional use in assisting with Rule 4-1.5 compliance by identifying billing inconsistencies in legal invoices.",
-    icon: ShieldCheck,
-    color: "text-blue-400",
-    borderColor: "border-blue-500/20",
-    bgColor: "bg-blue-500/5",
-  },
-  texas: {
-    badge: "Texas Rule 1.04 Software Assistant",
-    copy: "Automated software assistant for fee-transparency verification under Rule 1.04. Entity Address: 1809 S Street, Suite 101, #204, Sacramento, CA 95811.",
-    icon: Shield,
-    color: "text-amber-400",
-    borderColor: "border-amber-500/20",
-    bgColor: "bg-amber-500/5",
-  },
-  california: {
-    badge: "CA SB 37 & AB 316 Compliant Disclosure",
-    copy: "CA SB 37 Compliant Business Disclosure: LawAuditor is a technology platform. Address: 1809 S Street, Suite 101, #204, Sacramento, CA 95811. AB 316 Verified Automated Decision Support Tool.",
-    icon: ShieldAlert,
-    color: "text-emerald-400",
-    borderColor: "border-emerald-500/20",
-    bgColor: "bg-emerald-500/5",
-  },
-};
-
 export function ComplianceShields({ state }: ComplianceShieldsProps) {
+  const metadata = getActiveStateMetadata(state);
+  
+  const STATE_CONTENT = {
+    florida: {
+      badge: `${metadata.name} Rule 4-1.5 Assistant`,
+      copy: `Software assistant for fee-transparency verification. Designed for professional use in assisting with Rule 4-1.5 compliance. Address: ${SITE_CONFIG.address}.`,
+      icon: ShieldCheck,
+      color: "text-blue-400",
+      borderColor: "border-blue-500/20",
+      bgColor: "bg-blue-500/5",
+    },
+    texas: {
+      badge: `${metadata.aiActName} Compliance`,
+      copy: `Automated software assistant for fee-transparency verification under Rule 1.04. Designed for the Houston and Tampa markets. Address: ${SITE_CONFIG.address}.`,
+      icon: Shield,
+      color: "text-amber-400",
+      borderColor: "border-amber-500/20",
+      bgColor: "bg-amber-500/5",
+    },
+    california: {
+      badge: `${metadata.aiActName} Verified`,
+      copy: `CA SB 37 Compliant Business Disclosure: LawAuditor is a technology platform. AB 316 Verified Automated Decision Support Tool. Address: ${SITE_CONFIG.address}.`,
+      icon: ShieldAlert,
+      color: "text-emerald-400",
+      borderColor: "border-emerald-500/20",
+      bgColor: "bg-emerald-500/5",
+    },
+  };
+
   const content = STATE_CONTENT[state];
   if (!content) return null;
 
@@ -68,4 +71,3 @@ export function ComplianceShields({ state }: ComplianceShieldsProps) {
     </motion.div>
   );
 }
-

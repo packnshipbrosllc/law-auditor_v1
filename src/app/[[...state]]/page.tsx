@@ -11,37 +11,7 @@ import { ComplianceShields } from "@/components/compliance-shields";
 import { ComplianceBanner } from "@/components/compliance-banner";
 import { VerificationModal } from "@/components/verification-modal";
 import Link from "next/link";
-
-type StateConfig = {
-  name: string;
-  rule: string;
-  compliance: string[];
-  footerInfo?: string;
-  addressLabel?: string;
-};
-
-const STATE_CONFIGS: Record<string, StateConfig> = {
-  texas: {
-    name: "Texas",
-    rule: "Texas Rule 1.04",
-    compliance: ["UTBMS", "TX Rule 1.04"],
-    footerInfo: "LawAuditor | TX Assistant | Address: 123 California St, San Francisco, CA 94104",
-    addressLabel: "Principal Office",
-  },
-  florida: {
-    name: "Florida",
-    rule: "Florida Rule 4-1.5",
-    compliance: ["UTBMS", "FL Rule 4-1.5"],
-    footerInfo: "LawAuditor | FL Assistant | 456 Florida Blvd, Tampa, FL 33602",
-  },
-  california: {
-    name: "California",
-    rule: "CA SB 37 Compliance",
-    compliance: ["CCPA", "CPRA", "SB 37"],
-    footerInfo: "LawAuditor | CA Support | 123 California St, San Francisco, CA 94104",
-    addressLabel: "Bona Fide Office",
-  },
-};
+import { getActiveStateMetadata, SITE_CONFIG, STATE_METADATA } from "@/config/siteConfig";
 
 const STATE_MAP: Record<string, string> = {
   tx: "texas",
@@ -57,7 +27,8 @@ export default function Home({ params }: PageProps) {
   const resolvedParams = use(params);
   const stateParam = resolvedParams.state?.[0]?.toLowerCase();
   const normalizedState = stateParam ? (STATE_MAP[stateParam] || stateParam) : "texas";
-  const activeStateKey = (Object.keys(STATE_CONFIGS).includes(normalizedState) ? normalizedState : "texas") as keyof typeof STATE_CONFIGS;
+  const activeStateKey = (Object.keys(STATE_METADATA).includes(normalizedState) ? normalizedState : "texas");
+  const stateMetadata = getActiveStateMetadata(activeStateKey);
   
   const [terminalStep, setTerminalStep] = useState(0);
   const terminalMessages = [
@@ -94,8 +65,6 @@ export default function Home({ params }: PageProps) {
       clearInterval(dataTimer);
     };
   }, []);
-
-  const stateData = STATE_CONFIGS[activeStateKey];
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-50 selection:bg-blue-600 selection:text-white font-sans antialiased relative">
@@ -161,14 +130,14 @@ export default function Home({ params }: PageProps) {
                 transition={{ delay: 0.2 }}
                 className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium"
               >
-                Data-processing software built for elite firms in Texas, Florida, and California. 
+                {stateMetadata.regionalTies} <br/>
                 We isolate fee inconsistencies with absolute technical security.
               </motion.p>
               
               {/* State Indicator */}
               <div className="flex justify-center gap-4 mb-12">
                 <div className="border border-blue-600 bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest px-6 py-2">
-                  Software Active in: {stateData.name}
+                  Software Active in: {stateMetadata.name}
                 </div>
               </div>
 
@@ -265,45 +234,45 @@ export default function Home({ params }: PageProps) {
                         <div className="w-2.5 h-2.5 rounded-full bg-slate-800" />
                       </div>
                       <div className="h-4 w-px bg-slate-800" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                        <Activity className="w-3 h-3 text-blue-500" />
-                        Data Inconsistency Feed: {stateData.name}
-                      </span>
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-600">v4.0.2 // STABLE</div>
-                  </div>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                            <Activity className="w-3 h-3 text-blue-500" />
+                            Data Inconsistency Feed: {stateMetadata.name}
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-mono text-slate-600">v4.0.2 // STABLE</div>
+                      </div>
 
-                  {/* Dashboard Content */}
-                  <div className="grid md:grid-cols-3 gap-px bg-slate-800">
-                    <div className="bg-[#020617] p-8">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Invoices Analyzed</div>
-                      <div className="text-4xl font-mono font-medium text-white tabular-nums">
-                        {invoicesAnalyzed.toLocaleString()}
+                      {/* Dashboard Content */}
+                      <div className="grid md:grid-cols-3 gap-px bg-slate-800">
+                        <div className="bg-[#020617] p-8">
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Invoices Analyzed</div>
+                          <div className="text-4xl font-mono font-medium text-white tabular-nums">
+                            {invoicesAnalyzed.toLocaleString()}
+                          </div>
+                          <div className="mt-4 flex items-center gap-2 text-green-500 text-[10px] font-bold">
+                            <TrendingUp className="w-3 h-3" />
+                            +12.4% THIS MONTH
+                          </div>
+                        </div>
+                        <div className="bg-[#020617] p-8">
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Projected Fee Recovery</div>
+                          <div className="text-4xl font-mono font-medium text-blue-500 tabular-nums">
+                            ${recoveredFees.toLocaleString()}
+                          </div>
+                          <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                            Software Analysis Data
+                          </div>
+                        </div>
+                        <div className="bg-[#020617] p-8">
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Market Parity Index</div>
+                          <div className="text-4xl font-mono font-medium text-white tabular-nums">
+                            98.2<span className="text-slate-600">%</span>
+                          </div>
+                          <div className="mt-4 flex items-center gap-2 text-blue-400 text-[10px] font-bold">
+                            {stateMetadata.complianceRefs.join(' • ')}
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-4 flex items-center gap-2 text-green-500 text-[10px] font-bold">
-                        <TrendingUp className="w-3 h-3" />
-                        +12.4% THIS MONTH
-                      </div>
-                    </div>
-                    <div className="bg-[#020617] p-8">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Projected Fee Recovery</div>
-                      <div className="text-4xl font-mono font-medium text-blue-500 tabular-nums">
-                        ${recoveredFees.toLocaleString()}
-                      </div>
-                      <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                        Software Analysis Data
-                      </div>
-                    </div>
-                    <div className="bg-[#020617] p-8">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Market Parity Index</div>
-                      <div className="text-4xl font-mono font-medium text-white tabular-nums">
-                        98.2<span className="text-slate-600">%</span>
-                      </div>
-                      <div className="mt-4 flex items-center gap-2 text-blue-400 text-[10px] font-bold">
-                        {stateData.compliance.join(' • ')}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -331,7 +300,7 @@ export default function Home({ params }: PageProps) {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-bold uppercase tracking-tight">Zero-Retention Policy</h3>
                         <div className="flex gap-1">
-                          {stateData.compliance.map(c => (
+                          {stateMetadata.complianceRefs.map(c => (
                             <span key={c} className="px-1.5 py-0.5 border border-green-500/30 bg-green-500/10 text-green-500 text-[8px] font-black tracking-widest uppercase">{c}</span>
                           ))}
                         </div>
@@ -339,7 +308,7 @@ export default function Home({ params }: PageProps) {
                       <p className="text-slate-400 text-sm leading-relaxed font-medium">
                         Sensitive legal data is processed exclusively in volatile RAM. 
                         We store zero bytes of document content on permanent disk. 
-                        Full compliance for {stateData.name} firms.
+                        Full compliance for {stateMetadata.name} firms.
                       </p>
                     </div>
                   </div>
@@ -453,20 +422,14 @@ export default function Home({ params }: PageProps) {
         {/* Regional Compliance Trust Bar */}
         <section className="py-24 border-y border-slate-800 bg-slate-950/50 overflow-hidden">
           <div className="container mx-auto px-6">
-            <h2 className="text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 mb-12">Regional Compliance Standards</h2>
+            <h2 className="text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 mb-12">Regulatory Compliance Standards</h2>
             <div className="flex flex-wrap justify-center gap-12 md:gap-24 items-center grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition duration-500">
-              <div className="flex flex-col items-center gap-3">
-                <ShieldCheck className="w-8 h-8 text-blue-500" />
-                <span className="text-[9px] font-black tracking-widest uppercase text-white text-center">CCPA Compliant (CA)</span>
-              </div>
-              <div className="flex flex-col items-center gap-3">
-                <Gavel className="w-8 h-8 text-blue-500" />
-                <span className="text-[9px] font-black tracking-widest uppercase text-white text-center">TX Bar Guidelines</span>
-              </div>
-              <div className="flex flex-col items-center gap-3">
-                <Scale className="w-8 h-8 text-blue-500" />
-                <span className="text-[9px] font-black tracking-widest uppercase text-white text-center">FL Rule 4-1.5</span>
-              </div>
+              {stateMetadata.complianceRefs.map((ref) => (
+                <div key={ref} className="flex flex-col items-center gap-3">
+                  <ShieldCheck className="w-8 h-8 text-blue-500" />
+                  <span className="text-[9px] font-black tracking-widest uppercase text-white text-center">{ref}</span>
+                </div>
+              ))}
               <div className="flex flex-col items-center gap-3">
                 <Activity className="w-8 h-8 text-blue-500" />
                 <span className="text-[9px] font-black tracking-widest uppercase text-white text-center">UTBMS Verified</span>
@@ -481,7 +444,7 @@ export default function Home({ params }: PageProps) {
             <div className="max-w-4xl mx-auto border border-blue-500/30 bg-blue-600/5 p-12 md:p-20 text-center relative overflow-hidden">
               <h2 className="text-4xl md:text-6xl font-black mb-8 text-white tracking-tighter uppercase leading-[0.9]">Secure Your <br/>Analysis.</h2>
               <p className="text-slate-400 text-lg mb-12 max-w-2xl mx-auto font-medium">
-                Analysis for firms in FL, TX, and CA. Process data inconsistencies within 14 business days.
+                Optimized for the {stateMetadata.name} legal market. Process data inconsistencies within 14 business days.
               </p>
               <ContactForm />
             </div>
@@ -496,13 +459,13 @@ export default function Home({ params }: PageProps) {
               <AccordionItem value="item-1" className="border-slate-800">
                 <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6 text-left">Regulatory Data Processing</AccordionTrigger>
                 <AccordionContent className="text-slate-400 text-sm leading-relaxed font-medium pb-6">
-                  LawAuditor is a technology platform designed to automate data processing. We are natively built for UTBMS, CCPA, CPRA, and {stateData.rule} standards. Our software assists in identifying billing inconsistencies but does not provide legal conclusions or advice.
+                  LawAuditor is a technology platform designed to automate data processing. We are natively built for UTBMS, CCPA, CPRA, and {stateMetadata.rule} standards. Our software assists in identifying billing inconsistencies but does not provide legal conclusions or advice.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2" className="border-slate-800">
                 <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6 text-left">Data Analysis Timeline</AccordionTrigger>
                 <AccordionContent className="text-slate-400 text-sm leading-relaxed font-medium pb-6">
-                  Initial spend data analysis is completed within 72 hours using proprietary software for the Texas, Florida, and California legal markets. Reports are delivered via secure tunnel for human review.
+                  Initial spend data analysis is completed within 72 hours using proprietary software optimized for {stateMetadata.name} regulatory standards. Reports are delivered via secure tunnel for human review.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -515,7 +478,7 @@ export default function Home({ params }: PageProps) {
         <div className="container mx-auto px-6 flex flex-wrap justify-center items-center gap-x-12 gap-y-4 text-[9px] font-black tracking-[0.3em] uppercase text-slate-500">
           {(Object.keys(STATE_MAP) as Array<keyof typeof STATE_MAP>).map((key) => {
             const configKey = STATE_MAP[key];
-            const config = STATE_CONFIGS[configKey];
+            const config = STATE_METADATA[configKey];
             return (
               <div key={key} className="flex items-center gap-2.5">
                 <div className="relative flex h-1.5 w-1.5">
@@ -543,11 +506,11 @@ export default function Home({ params }: PageProps) {
               </div>
               <div className="space-y-4">
                 <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm">
-                  Entity: LawAuditor (A Technology Platform) <br/>
-                  Address: 1809 S Street, Suite 101, #204, Sacramento, CA 95811
+                  Entity: {SITE_CONFIG.entityName} <br/>
+                  Address: {SITE_CONFIG.address}
                 </p>
                 <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm">
-                  LawAuditor is a SaaS provider, not a law firm. We do not provide legal advice, legal representation, or lawyer referral services. Use of this software does not create an attorney-client relationship.
+                  {SITE_CONFIG.companyName} is a SaaS provider, not a law firm. We do not provide legal advice, legal representation, or lawyer referral services. Use of this software does not create an attorney-client relationship.
                 </p>
               </div>
               <div className="flex gap-8 mt-8 text-slate-500 text-[10px] font-black uppercase tracking-widest">
@@ -561,7 +524,7 @@ export default function Home({ params }: PageProps) {
               <div className="flex items-center md:justify-end gap-2 text-slate-500">
                 <MapPin className="w-3 h-3 text-blue-500" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">
-                  {stateData.footerInfo}
+                  LawAuditor | {stateMetadata.name} Hub | {stateMetadata.address}
                 </span>
               </div>
               <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">
@@ -576,6 +539,7 @@ export default function Home({ params }: PageProps) {
         isOpen={isVerificationModalOpen} 
         onClose={() => setIsVerificationModalOpen(false)}
         onVerify={() => setHasProfessionalVerification(true)}
+        stateCode={activeStateKey}
       />
     </div>
   );
