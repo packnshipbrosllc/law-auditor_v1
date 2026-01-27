@@ -18,13 +18,14 @@ export default function TermsOfService() {
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <ChevronLeft className="w-4 h-4 text-slate-500 group-hover:text-blue-500 transition-colors" />
-            <Image 
-              src="/wmremove-transformed.jpeg" 
-              alt="LawAuditor Logo" 
-              height={32}
-              width={32}
-              className="h-8 w-auto"
-            />
+            <div className="relative h-8 w-8 rounded-full overflow-hidden border border-white/10 shadow-[0_0_12px_rgba(255,255,255,0.1)]">
+              <Image 
+                src="/wmremove-transformed.jpeg" 
+                alt="LawAuditor Logo" 
+                fill
+                className="object-cover"
+              />
+            </div>
             <span className="text-lg font-bold tracking-tighter text-white">LAWAUDITOR</span>
           </Link>
         </div>

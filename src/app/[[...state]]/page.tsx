@@ -537,12 +537,12 @@ export default function Home({ params }: PageProps) {
           <div className="grid md:grid-cols-2 gap-12 items-start mb-16">
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <div className="relative w-8 h-8">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 shadow-[0_0_12px_rgba(255,255,255,0.1)]">
                   <Image 
                     src="/wmremove-transformed.jpeg" 
                     alt="LawAuditor Logo" 
                     fill 
-                    className="object-contain"
+                    className="object-cover"
                   />
                 </div>
                 <span className="font-bold tracking-tighter text-base text-white">LAWAUDITOR</span>

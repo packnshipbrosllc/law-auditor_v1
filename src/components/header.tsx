@@ -30,14 +30,15 @@ export function Header() {
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <Image 
-              src="/wmremove-transformed.jpeg" 
-              alt="LawAuditor Logo" 
-              height={40}
-              width={40}
-              className="h-10 w-auto"
-              priority
-            />
+            <div className="relative h-10 w-10 rounded-full overflow-hidden border border-white/10 shadow-[0_0_12px_rgba(255,255,255,0.1)]">
+              <Image 
+                src="/wmremove-transformed.jpeg" 
+                alt="LawAuditor Logo" 
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
             <span className="text-lg font-bold tracking-tighter text-white">LAWAUDITOR</span>
           </div>
           <div className="h-4 w-px bg-slate-800 hidden md:block" />
