@@ -9,10 +9,14 @@ export function middleware(request: NextRequest) {
   // Supported states
   const supportedStates = ['TX', 'CA', 'FL'];
   
-  // Determine state: check if region is supported, otherwise default to 'TX'
-  let state = 'TX';
+  // Determine state: check if region is supported, otherwise default to 'CA' (Sacramento testing default)
+  let state = 'CA';
   if (region && supportedStates.includes(region.toUpperCase())) {
     state = region.toUpperCase();
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Middleware] Detected Region: ${region || 'Unknown'}, Assigned State: ${state}`);
   }
 
   // Create response
@@ -34,4 +38,3 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/', '/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
-

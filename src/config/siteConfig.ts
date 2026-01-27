@@ -20,35 +20,34 @@ export const SITE_CONFIG = {
 export const STATE_METADATA: Record<string, StateMetadata> = {
   texas: {
     name: 'Texas',
-    aiActName: 'Texas Responsible AI Governance Act',
-    complianceRefs: ['TX Rule 1.04', 'Texas Bar Guidelines'],
+    aiActName: 'Texas Responsible AI Governance Act (SB 1311)',
+    complianceRefs: ['SB 1311', 'TX Rule 1.04'],
     regionalTies: 'Built for the demanding legal markets of Houston and Tampa.',
-    rule: 'Texas Rule 1.04',
+    rule: 'Texas SB 1311 Standards',
     address: SITE_CONFIG.address,
-    disclosureText: `In accordance with the ${SITE_CONFIG.primaryState === 'TX' ? 'Texas Responsible AI Governance Act' : 'AI Transparency Standards'}, LawAuditor is strictly a data-processing tool. All outputs must be reviewed by a licensed attorney (Human-in-the-Loop) who remains responsible for all findings and subsequent actions.`,
+    disclosureText: `In accordance with Texas SB 1311 and Rule 1.04, LawAuditor is strictly a data-processing tool. All outputs must be reviewed by a licensed attorney (Human-in-the-Loop) who remains responsible for all findings.`,
   },
   california: {
     name: 'California',
-    aiActName: 'California AI Transparency Act (SB 37)',
-    complianceRefs: ['CCPA', 'CPRA', 'CA SB 37', 'AB 316'],
+    aiActName: 'California AI Transparency Act (AB 853)',
+    complianceRefs: ['AB 853', 'SB 37', 'AB 316'],
     regionalTies: 'Optimized for Silicon Valley and Los Angeles innovation.',
-    rule: 'CA SB 37 Compliance',
+    rule: 'CA AB 853 Compliance',
     address: SITE_CONFIG.address,
-    disclosureText: `In accordance with the California AI Transparency Act (SB 37) and AB 316, LawAuditor is a software-first analysis tool. The user remains the definitive Decision Maker, and all results require an independent human review by a qualified legal professional.`,
+    disclosureText: `In accordance with CA AB 853 and SB 37, LawAuditor is a software-first analysis tool. The user remains the definitive Decision Maker, and all results require an independent human review.`,
   },
   florida: {
     name: 'Florida',
-    aiActName: 'Florida AI Ethics Standards',
-    complianceRefs: ['FL Rule 4-1.5', 'Florida Bar Guidelines'],
+    aiActName: 'Florida AI Ethics Standards (Rule 4-1.5)',
+    complianceRefs: ['FL Rule 4-1.5', 'Bar Guidelines'],
     regionalTies: 'Serving the Miami and Tampa legal ecosystems.',
     rule: 'Florida Rule 4-1.5',
     address: SITE_CONFIG.address,
-    disclosureText: `Aligned with Florida AI Ethics Standards, LawAuditor provides automated assistance for Rule 4-1.5 verification. It is not a substitute for professional legal judgment; human review of all software-generated inconsistencies is mandatory.`,
+    disclosureText: `Aligned with Florida Rule 4-1.5, LawAuditor provides automated assistance for fee-transparency verification. It is not a substitute for professional legal judgment; human review is mandatory.`,
   },
 };
 
 export function getActiveStateMetadata(stateKey?: string): StateMetadata {
-  // If stateKey is not provided (e.g. initial load), try to get from cookie
   let resolvedKey = stateKey;
   
   if (typeof window !== 'undefined' && !resolvedKey) {

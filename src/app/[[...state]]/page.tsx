@@ -516,10 +516,23 @@ export default function Home({ params }: PageProps) {
                   {SITE_CONFIG.companyName} is a SaaS provider, not a law firm. We do not provide legal advice, legal representation, or lawyer referral services. Use of this software does not create an attorney-client relationship.
                 </p>
               </div>
-              <div className="flex gap-8 mt-8 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+              <div className="flex gap-8 mt-8 text-slate-500 text-[10px] font-black uppercase tracking-widest items-center">
                 <Link href="/terms" className="hover:text-blue-500 transition-colors" aria-label="Terms of Service">Terms of Service</Link>
                 <Link href="/terms" className="hover:text-blue-500 transition-colors" aria-label="Privacy Policy">Privacy Policy</Link>
                 <a href="#demo" className="hover:text-white transition-colors" aria-label="Contact Us">Contact</a>
+                <div className="h-3 w-px bg-slate-800 mx-2" />
+                <button 
+                  onClick={() => {
+                    const states: ('TX' | 'CA' | 'FL')[] = ['TX', 'CA', 'FL'];
+                    const currentState = document.cookie.split('; ').find(row => row.startsWith('user-state='))?.split('=')[1];
+                    const nextState = states[(states.indexOf((currentState as any) || 'CA') + 1) % states.length];
+                    document.cookie = `user-state=${nextState}; path=/; max-age=${60 * 60 * 24 * 30}`;
+                    window.location.reload();
+                  }}
+                  className="text-slate-700 hover:text-blue-500 transition-colors"
+                >
+                  Force State Swap
+                </button>
               </div>
             </div>
             
