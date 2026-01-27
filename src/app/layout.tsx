@@ -31,11 +31,10 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: ["legal data analysis", "UTBMS compliance", "legal spend recovery", `${primaryMetadata.name} legal tech`, "zero-retention AI analysis"],
     icons: { 
       icon: [
-        { url: '/favicon.ico' },
-        { url: '/icon.png' },
+        { url: '/wmremove-transformed.jpeg' },
       ],
       apple: [
-        { url: '/apple-icon.png' },
+        { url: '/wmremove-transformed.jpeg' },
       ],
     },
     openGraph: {

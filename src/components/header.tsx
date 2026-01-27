@@ -31,8 +31,8 @@ export function Header() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <Image 
-              src="/logo.png" 
-              alt="LawAuditor Official Logo" 
+              src="/wmremove-transformed.jpeg" 
+              alt="LawAuditor Logo" 
               height={40}
               width={40}
               className="h-10 w-auto"

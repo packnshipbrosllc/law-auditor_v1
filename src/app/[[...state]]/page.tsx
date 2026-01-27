@@ -105,7 +105,7 @@ export default function Home({ params }: PageProps) {
       <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden">
         <div className="relative w-[800px] h-[800px] opacity-[0.05] grayscale">
           <Image 
-            src="/logo.png" 
+            src="/wmremove-transformed.jpeg" 
             alt="" 
             fill 
             className="object-contain"
@@ -134,8 +134,8 @@ export default function Home({ params }: PageProps) {
                 {/* Logo Glow Effect */}
                 <div className="absolute inset-0 bg-gold/20 blur-3xl rounded-full" />
                 <Image 
-                  src="/logo.png" 
-                  alt="LawAuditor Official Logo" 
+                  src="/wmremove-transformed.jpeg" 
+                  alt="LawAuditor Logo" 
                   fill 
                   className="object-contain relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                   priority
@@ -537,8 +537,8 @@ export default function Home({ params }: PageProps) {
               <div className="flex items-center gap-3 mb-6">
                 <div className="relative w-8 h-8">
                   <Image 
-                    src="/logo.png" 
-                    alt="LawAuditor Official Logo" 
+                    src="/wmremove-transformed.jpeg" 
+                    alt="LawAuditor Logo" 
                     fill 
                     className="object-contain"
                   />
