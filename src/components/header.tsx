@@ -30,15 +30,14 @@ export function Header() {
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10">
-              <Image 
-                src="/logo.png" 
-                alt="LawAuditor Official Logo" 
-                fill 
-                className="object-contain"
-                priority
-              />
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="LawAuditor Official Logo" 
+              height={40}
+              width={40}
+              className="h-10 w-auto"
+              priority
+            />
             <span className="text-lg font-bold tracking-tighter text-white">LAWAUDITOR</span>
           </div>
           <div className="h-4 w-px bg-slate-800 hidden md:block" />
