@@ -6,26 +6,24 @@ export function middleware(request: NextRequest) {
   // Supported states
   const supportedStates = ['TX', 'CA', 'FL'];
 
-  // 1. Check for Vercel Geolocation headers first to ensure we are not ignoring them
-  // We use both the modern geolocation helper and the direct request.geo property
-  const vercelGeo = geolocation(request);
-  const directGeo = (request as any).geo;
-  const region = vercelGeo.region || directGeo?.region;
+  // 1. Check for Vercel Geolocation headers
+  const { region } = geolocation(request);
+  const detectedRegion = region?.toUpperCase();
   
-  // 2. Check if user has a manual override cookie
-  const cookieState = request.cookies.get('user-state')?.value;
+  // 2. Check for manual override cookie
+  const cookieState = request.cookies.get('user-state')?.value?.toUpperCase();
   
-  let state = 'CA'; // Default fallback if nothing else is found
+  let state = 'CA'; // Default fallback
 
-  if (region && supportedStates.includes(region.toUpperCase())) {
-    // If we have a valid region from Vercel, prioritize it unless there's a valid cookie
-    // Actually, usually we want to stick with the cookie if it exists to allow manual overrides
-    state = region.toUpperCase();
-  }
-
-  // 3. If a cookie exists, it should override the detected geo (manual user choice)
-  if (cookieState && supportedStates.includes(cookieState.toUpperCase())) {
-    state = cookieState.toUpperCase();
+  // Priority logic:
+  // 1. Use manual cookie if it's valid
+  // 2. Otherwise use detected geo if it's in our supported list
+  // 3. Fallback to CA
+  
+  if (cookieState && supportedStates.includes(cookieState)) {
+    state = cookieState;
+  } else if (detectedRegion && supportedStates.includes(detectedRegion)) {
+    state = detectedRegion;
   }
 
   // Debug log for development
