@@ -7,9 +7,10 @@ import { TrendingDown, ShieldCheck, DollarSign } from "lucide-react";
 interface LeakageMeterProps {
   amount: number;
   invoiceCount: number;
+  label?: string;
 }
 
-export function LeakageMeter({ amount, invoiceCount }: LeakageMeterProps) {
+export function LeakageMeter({ amount, invoiceCount, label = "At-Risk Revenue" }: LeakageMeterProps) {
   const [displayAmount, setDisplayAmount] = useState(0);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function LeakageMeter({ amount, invoiceCount }: LeakageMeterProps) {
               <DollarSign className="w-4 h-4 text-white" />
             </div>
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-100">
-              At-Risk Revenue
+              {label}
             </h3>
           </div>
 
