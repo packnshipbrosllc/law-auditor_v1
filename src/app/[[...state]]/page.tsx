@@ -133,13 +133,15 @@ export default function Home({ params }: PageProps) {
               >
                 {/* Logo Glow Effect */}
                 <div className="absolute inset-0 bg-gold/20 blur-3xl rounded-full" />
-                <Image 
-                  src="/wmremove-transformed.jpeg" 
-                  alt="LawAuditor Logo" 
-                  fill 
-                  className="object-contain relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                  priority
-                />
+                <div className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)] border border-white/5">
+                  <Image 
+                    src="/wmremove-transformed.jpeg" 
+                    alt="LawAuditor Logo" 
+                    fill 
+                    className="object-cover relative z-10"
+                    priority
+                  />
+                </div>
               </motion.div>
 
               <motion.div 

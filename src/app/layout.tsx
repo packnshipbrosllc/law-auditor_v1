@@ -30,7 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
     description: `Secure, zero-retention AI analysis to recover lost legal spend. Optimized for ${primaryMetadata.name} regulatory standards.`,
     keywords: ["legal data analysis", "UTBMS compliance", "legal spend recovery", `${primaryMetadata.name} legal tech`, "zero-retention AI analysis"],
     icons: { 
-      icon: '/icon.png',
+      icon: [
+        { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/favicon.ico' },
+      ],
+      apple: '/apple-touch-icon.png',
     },
     openGraph: {
       title: `${SITE_CONFIG.companyName} | Precision Data Analysis`,
