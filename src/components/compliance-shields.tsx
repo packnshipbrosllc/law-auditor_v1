@@ -10,7 +10,7 @@ interface ComplianceShieldsProps {
 const STATE_CONTENT = {
   florida: {
     badge: "Florida Rule 4-1.5 Verification Assistant",
-    copy: "A data-processing tool to assist in Rule 4-1.5 verification. Our software helps firms identify billing inconsistencies and ensures fee reasonableness in compliance with the 75/25 primary-secondary responsibility standards.",
+    copy: "Designed for professional use in auditing under Rule 4-1.5. Our data-processing tool assists in Rule 4-1.5 verification by identifying billing inconsistencies and ensuring fee reasonableness.",
     icon: ShieldCheck,
     color: "text-blue-400",
     borderColor: "border-blue-500/20",
@@ -18,15 +18,15 @@ const STATE_CONTENT = {
   },
   texas: {
     badge: "Texas Rule 1.04 Consistency Tool",
-    copy: "An automated consistency-checker for Rule 1.04 fee transparency. Aligned with Texas Rule 1.04 Standards, LawAuditor helps firms mitigate risk through objective, data-driven report generation.",
+    copy: "Business Entity Address Disclosure: 123 California St, San Francisco, CA 94104. Automated consistency-checker for Rule 1.04 fee transparency to assist Texas firms in risk mitigation.",
     icon: Shield,
     color: "text-amber-400",
     borderColor: "border-amber-500/20",
     bgColor: "bg-amber-500/5",
   },
   california: {
-    badge: "SB 37 & AB 316 Verified SaaS",
-    copy: "CA SB 37 Transparency: LawAuditor is a software provider. Business Address: 123 California St, San Francisco, CA 94104. We are not a Lawyer Referral Service (LRS) and receive no fees for referrals. Fully compliant with CA AB 316 AI responsibility standards.",
+    badge: "AB 316 Verified: Automated Decision Support Tool",
+    copy: "CA SB 37 Transparency: LawAuditor is a software provider. Business Address: 123 California St, San Francisco, CA 94104. We are not a Lawyer Referral Service (LRS) and receive no fees for referrals.",
     icon: ShieldAlert,
     color: "text-emerald-400",
     borderColor: "border-emerald-500/20",

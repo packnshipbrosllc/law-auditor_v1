@@ -8,6 +8,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Shield, Lock, Server, ShieldCheck, TrendingUp, Activity, Scale, Gavel, BarChart3, Globe, Zap, MapPin } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
 import { ComplianceShields } from "@/components/compliance-shields";
+import { ComplianceBanner } from "@/components/compliance-banner";
+import Link from "next/link";
 
 type StateConfig = {
   name: string;
@@ -22,20 +24,20 @@ const STATE_CONFIGS: Record<string, StateConfig> = {
     name: "Texas",
     rule: "Texas Rule 1.04",
     compliance: ["UTBMS", "TX Rule 1.04"],
-    footerInfo: "LawAuditor | Principal Office: 123 Texas Ave, Houston, TX 77002",
+    footerInfo: "LawAuditor | TX Assistant | Address: 123 California St, San Francisco, CA 94104",
     addressLabel: "Principal Office",
   },
   florida: {
     name: "Florida",
     rule: "Florida Rule 4-1.5",
     compliance: ["UTBMS", "FL Rule 4-1.5"],
-    footerInfo: "LawAuditor | 456 Florida Blvd, Tampa, FL 33602",
+    footerInfo: "LawAuditor | FL Assistant | 456 Florida Blvd, Tampa, FL 33602",
   },
   california: {
     name: "California",
     rule: "CA SB 37 Compliance",
     compliance: ["CCPA", "CPRA", "SB 37"],
-    footerInfo: "LawAuditor | Bona Fide Office: 789 California St, San Francisco, CA 94104",
+    footerInfo: "LawAuditor | CA Support | 123 California St, San Francisco, CA 94104",
     addressLabel: "Bona Fide Office",
   },
 };
@@ -209,14 +211,15 @@ export default function Home({ params }: PageProps) {
           </div>
         </section>
 
-        {/* Compliance Shields Injection */}
-        <section className="pb-32">
-          <div className="container mx-auto px-6">
-            <div className="max-w-5xl mx-auto">
-              <ComplianceShields state={activeStateKey as any} />
-            </div>
-          </div>
-        </section>
+            {/* Compliance Shields Injection */}
+            <section className="pb-32">
+              <div className="container mx-auto px-6">
+                <div className="max-w-5xl mx-auto">
+                  <ComplianceBanner />
+                  <ComplianceShields state={activeStateKey as any} />
+                </div>
+              </div>
+            </section>
 
         {/* Dashboard Preview Section */}
         <section id="dashboard" className="pb-32">
@@ -511,13 +514,19 @@ export default function Home({ params }: PageProps) {
                 <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-[10px] text-white">L</div>
                 <span className="font-bold tracking-tighter text-base text-white">LAWAUDITOR</span>
               </div>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest max-w-sm mb-6 leading-loose">
-                LawAuditor is a technology platform. We are not a law firm and do not provide legal advice. All data processing is performed via our Zero-Retention software architecture.
-              </p>
-              <div className="flex gap-8 text-slate-600 text-[10px] font-black uppercase tracking-widest">
-                <a href="#" className="hover:text-white transition-colors" aria-label="Privacy Policy">Privacy</a>
-                <a href="#" className="hover:text-white transition-colors" aria-label="Terms of Service">Terms</a>
-                <a href="#" className="hover:text-white transition-colors" aria-label="Contact Us">Contact</a>
+              <div className="space-y-4">
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm">
+                  Business Name: LawAuditor <br/>
+                  Registered Address: 123 California St, San Francisco, CA 94104
+                </p>
+                <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm">
+                  Not a Lawyer Referral Service. No legal advice provided. LawAuditor is a technology platform. All audits are processed via our Zero-Retention architecture.
+                </p>
+              </div>
+              <div className="flex gap-8 mt-8 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                <Link href="/terms" className="hover:text-blue-500 transition-colors" aria-label="Terms of Service">Terms of Service</Link>
+                <Link href="/terms" className="hover:text-blue-500 transition-colors" aria-label="Privacy Policy">Privacy Policy</Link>
+                <a href="#demo" className="hover:text-white transition-colors" aria-label="Contact Us">Contact</a>
               </div>
             </div>
             
