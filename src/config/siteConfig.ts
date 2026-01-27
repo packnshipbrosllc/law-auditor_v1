@@ -48,8 +48,19 @@ export const STATE_METADATA: Record<string, StateMetadata> = {
 };
 
 export function getActiveStateMetadata(stateKey?: string): StateMetadata {
-  const normalizedKey = stateKey?.toLowerCase() || SITE_CONFIG.primaryState.toLowerCase();
-  // Map 'tx' to 'texas' etc if needed, but the keys in STATE_METADATA are full names
+  // If stateKey is not provided (e.g. initial load), try to get from cookie
+  let resolvedKey = stateKey;
+  
+  if (typeof window !== 'undefined' && !resolvedKey) {
+    const cookieValue = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('user-state='))
+      ?.split('=')[1];
+    resolvedKey = cookieValue;
+  }
+
+  const normalizedKey = resolvedKey?.toLowerCase() || SITE_CONFIG.primaryState.toLowerCase();
+  
   const mapping: Record<string, string> = {
     tx: 'texas',
     ca: 'california',
@@ -58,6 +69,7 @@ export function getActiveStateMetadata(stateKey?: string): StateMetadata {
     california: 'california',
     florida: 'florida'
   };
+  
   const key = mapping[normalizedKey] || 'texas';
   return STATE_METADATA[key];
 }

@@ -26,9 +26,12 @@ interface PageProps {
 export default function Home({ params }: PageProps) {
   const resolvedParams = use(params);
   const stateParam = resolvedParams.state?.[0]?.toLowerCase();
-  const normalizedState = stateParam ? (STATE_MAP[stateParam] || stateParam) : "texas";
-  const activeStateKey = (Object.keys(STATE_METADATA).includes(normalizedState) ? normalizedState : "texas");
-  const stateMetadata = getActiveStateMetadata(activeStateKey);
+  
+  // Use state from URL param if available, otherwise fallback to Texas
+  // The client-side logic in getActiveStateMetadata will try to use the cookie
+  const normalizedState = stateParam ? (STATE_MAP[stateParam] || stateParam) : undefined;
+  const stateMetadata = getActiveStateMetadata(normalizedState);
+  const activeStateKey = stateMetadata.name.toLowerCase();
   
   const [terminalStep, setTerminalStep] = useState(0);
   const terminalMessages = [
