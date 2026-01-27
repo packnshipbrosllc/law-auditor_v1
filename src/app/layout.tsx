@@ -16,10 +16,6 @@ export const metadata: Metadata = {
   title: "LawAuditor | Enterprise Legal Auditing for Texas, Florida, & California",
   description: "Secure, zero-retention AI auditing to recover lost legal spend and ensure UTBMS compliance. Optimized for the statewide legal markets of Texas, Florida, and California.",
   keywords: ["legal auditing", "UTBMS compliance", "legal spend recovery", "Texas legal tech", "Florida legal tech", "California legal tech", "zero-retention auditing"],
-  icons: {
-    icon: '/icon.ico?v=2',
-    apple: '/icon.ico?v=2',
-  },
   openGraph: {
     title: "LawAuditor | Precision Legal Auditing",
     description: "Recover lost legal spend with zero data risk.",
@@ -36,6 +32,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
+      <head>
+        <link rel="icon" href="/icon-gavel.png?v=3" />
+        <link rel="apple-touch-icon" href="/icon-gavel.png?v=3" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-blue-600 selection:text-white`}
       >

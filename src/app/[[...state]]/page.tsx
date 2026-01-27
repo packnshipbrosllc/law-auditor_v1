@@ -1,13 +1,53 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Shield, Lock, Zap, BarChart3, Globe, Mail, Server, ShieldCheck, TrendingUp, DollarSign, Activity, ChevronRight, Calculator, CheckCircle2, Scale, Gavel } from "lucide-react";
+import { Shield, Lock, Server, ShieldCheck, TrendingUp, Activity, Scale, Gavel, BarChart3, Globe, Zap } from "lucide-react";
+import { ContactForm } from "@/components/contact-form";
 
-export default function Home() {
+type StateConfig = {
+  name: string;
+  rule: string;
+  compliance: string[];
+};
+
+const STATE_CONFIGS: Record<string, StateConfig> = {
+  texas: {
+    name: "Texas",
+    rule: "Texas Bar Guidelines",
+    compliance: ["UTBMS", "State Bar Certified"],
+  },
+  florida: {
+    name: "Florida",
+    rule: "Florida Rule 4-1.5",
+    compliance: ["UTBMS", "FL Rule 4-1.5"],
+  },
+  california: {
+    name: "California",
+    rule: "CCPA/CPRA Compliance",
+    compliance: ["CCPA", "CPRA", "UTBMS"],
+  },
+};
+
+const STATE_MAP: Record<string, string> = {
+  tx: "texas",
+  fl: "florida",
+  ca: "california",
+};
+
+interface PageProps {
+  params: Promise<{ state?: string[] }>;
+}
+
+export default function Home({ params }: PageProps) {
+  const resolvedParams = use(params);
+  const stateParam = resolvedParams.state?.[0]?.toLowerCase();
+  const normalizedState = stateParam ? (STATE_MAP[stateParam] || stateParam) : "texas";
+  const activeStateKey = (Object.keys(STATE_CONFIGS).includes(normalizedState) ? normalizedState : "texas") as keyof typeof STATE_CONFIGS;
+  
   const [terminalStep, setTerminalStep] = useState(0);
   const terminalMessages = [
     "Scanning invoices...",
@@ -23,11 +63,6 @@ export default function Home() {
   // ROI Calculator State
   const [monthlySpend, setMonthlySpend] = useState(50000);
   const projectedRecoveryMin = monthlySpend * 0.12;
-  const projectedRecoveryMax = monthlySpend * 0.18;
-
-  // Form State
-  const [formSubmitted, setFormSubmitted] = useState(false);
-  const [email, setEmail] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -45,15 +80,13 @@ export default function Home() {
     };
   }, []);
 
-  const handleDemoSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setFormSubmitted(true);
-    }
-  };
+  const stateData = STATE_CONFIGS[activeStateKey];
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-50 selection:bg-blue-600 selection:text-white font-sans antialiased">
+    <div className="min-h-screen bg-[#020617] text-slate-50 selection:bg-blue-600 selection:text-white font-sans antialiased relative">
+      {/* Visual Texture Overlay */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+
       {/* Navbar: Sticky with glassmorphism */}
       <nav className="fixed top-0 w-full z-[150] border-b border-slate-800/50 bg-[#020617]/70 backdrop-blur-xl">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
@@ -62,14 +95,14 @@ export default function Home() {
             <span className="text-lg font-bold tracking-tighter">LAWAUDITOR</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            <a href="#dashboard" className="hover:text-white transition-colors">Dashboard</a>
-            <a href="#security" className="hover:text-white transition-colors">Security Architecture</a>
-            <a href="#calculator" className="hover:text-white transition-colors">ROI</a>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+            <a href="#dashboard" className="hover:text-white transition-colors" aria-label="Go to Dashboard section">Dashboard</a>
+            <a href="#security" className="hover:text-white transition-colors" aria-label="Go to Security Architecture section">Security Architecture</a>
+            <a href="#calculator" className="hover:text-white transition-colors" aria-label="Go to ROI Calculator section">ROI</a>
+            <a href="#faq" className="hover:text-white transition-colors" aria-label="Go to FAQ section">FAQ</a>
           </div>
           <div className="flex items-center gap-4">
             <a href="#demo">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none border border-blue-400/20 shadow-none">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none border border-blue-400/20 shadow-none" aria-label="Request Demo">
                 Request Demo
               </Button>
             </a>
@@ -77,7 +110,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <main>
+      <main className="relative z-10">
         {/* Hero Section */}
         <section className="relative pt-40 pb-24 overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
@@ -109,6 +142,14 @@ export default function Home() {
                 Built for the most demanding legal markets in Texas, Florida, and California. 
                 We isolate inefficiencies and reclaim capital with absolute technical security.
               </motion.p>
+              
+              {/* State Indicator */}
+              <div className="flex justify-center gap-4 mb-12">
+                <div className="border border-blue-600 bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest px-6 py-2">
+                  Operational in: {stateData.name}
+                </div>
+              </div>
+
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -116,15 +157,14 @@ export default function Home() {
                 className="flex flex-col sm:flex-row items-center justify-center gap-4"
               >
                 <div className="relative group">
-                  {/* Subtle Glow behind primary CTA */}
                   <div className="absolute -inset-1 bg-blue-600 rounded-none blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                   <a href="#demo">
-                    <Button size="lg" className="relative bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-blue-400/20">
+                    <Button size="lg" className="relative bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-blue-400/20" aria-label="Secure Recovery Audit">
                       Secure Recovery Audit
                     </Button>
                   </a>
                 </div>
-                <Button size="lg" variant="outline" className="border-slate-800 bg-transparent hover:bg-slate-900 text-slate-300 px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none">
+                <Button size="lg" variant="outline" className="border-slate-800 bg-transparent hover:bg-slate-900 text-slate-300 px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none" aria-label="Platform Technicals">
                   Platform Technicals
                 </Button>
               </motion.div>
@@ -151,7 +191,7 @@ export default function Home() {
                       <div className="h-4 w-px bg-slate-800" />
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
                         <Activity className="w-3 h-3 text-blue-500" />
-                        Live Spend Intelligence
+                        Live Spend Intelligence: {stateData.name}
                       </span>
                     </div>
                     <div className="text-[10px] font-mono text-slate-600">v4.0.2 // STABLE</div>
@@ -184,7 +224,7 @@ export default function Home() {
                         98.2<span className="text-slate-600">%</span>
                       </div>
                       <div className="mt-4 flex items-center gap-2 text-blue-400 text-[10px] font-bold">
-                        TEXAS • FLORIDA • CALIFORNIA
+                        {stateData.compliance.join(' • ')}
                       </div>
                     </div>
                   </div>
@@ -198,7 +238,7 @@ export default function Home() {
         <section id="security" className="py-32 bg-slate-950 border-y border-slate-800 relative overflow-hidden">
           <div className="container mx-auto px-6 relative">
             <div className="max-w-4xl mx-auto text-center mb-20">
-              <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight">Security Architecture.</h2>
+              <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight uppercase">Security Architecture.</h2>
               <p className="text-slate-400 text-lg font-medium">
                 We reclaim capital without ever compromising your data's sovereignty.
               </p>
@@ -215,15 +255,15 @@ export default function Home() {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-bold uppercase tracking-tight">Zero-Retention Policy</h3>
                         <div className="flex gap-1">
-                          <span className="px-1.5 py-0.5 border border-green-500/30 bg-green-500/10 text-green-500 text-[8px] font-black tracking-widest uppercase">CCPA</span>
-                          <span className="px-1.5 py-0.5 border border-green-500/30 bg-green-500/10 text-green-500 text-[8px] font-black tracking-widest uppercase">CPRA</span>
-                          <span className="px-1.5 py-0.5 border border-blue-500/30 bg-blue-500/10 text-blue-500 text-[8px] font-black tracking-widest uppercase">FL 4-1.5</span>
+                          {stateData.compliance.map(c => (
+                            <span key={c} className="px-1.5 py-0.5 border border-green-500/30 bg-green-500/10 text-green-500 text-[8px] font-black tracking-widest uppercase">{c}</span>
+                          ))}
                         </div>
                       </div>
                       <p className="text-slate-400 text-sm leading-relaxed font-medium">
                         Sensitive legal data is processed exclusively in volatile RAM. 
                         We store zero bytes of document content on permanent disk. 
-                        Full compliance for Texas, Florida, and California firms.
+                        Full compliance for {stateData.name} firms.
                       </p>
                     </div>
                   </div>
@@ -278,7 +318,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ROI Calculator Section - NEW */}
+        {/* ROI Calculator Section */}
         <section id="calculator" className="py-32 bg-[#020617]">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto text-center mb-16">
@@ -302,6 +342,7 @@ export default function Home() {
                     value={monthlySpend}
                     onChange={(e) => setMonthlySpend(parseInt(e.target.value))}
                     className="w-full h-1.5 bg-slate-800 rounded-none appearance-none cursor-pointer accent-blue-600"
+                    aria-label="Monthly Legal Spend Slider"
                   />
                   <div className="flex justify-between text-[8px] font-mono text-slate-600 uppercase tracking-widest">
                     <span>$10k</span>
@@ -333,7 +374,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Regional Compliance Trust Bar - NEW */}
+        {/* Regional Compliance Trust Bar */}
         <section className="py-24 border-y border-slate-800 bg-slate-950/50 overflow-hidden">
           <div className="container mx-auto px-6">
             <h2 className="text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 mb-12">Regional Compliance Standards</h2>
@@ -362,47 +403,11 @@ export default function Home() {
         <section id="demo" className="py-32 relative">
           <div className="container mx-auto px-6 relative">
             <div className="max-w-4xl mx-auto border border-blue-500/30 bg-blue-600/5 p-12 md:p-20 text-center relative overflow-hidden">
-              <AnimatePresence mode="wait">
-                {!formSubmitted ? (
-                  <motion.div
-                    key="form"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <h2 className="text-4xl md:text-6xl font-black mb-8 text-white tracking-tighter uppercase">Secure Your Recovery.</h2>
-                    <p className="text-slate-400 text-lg mb-12 max-w-2xl mx-auto font-medium">
-                      Auditing firms in FL, TX, and CA. Reclaim lost spend within 14 business days.
-                    </p>
-                    <form onSubmit={handleDemoSubmit} className="flex flex-col sm:flex-row gap-0 max-w-xl mx-auto border border-slate-800">
-                      <input 
-                        type="email" 
-                        placeholder="WORK EMAIL" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="flex-1 h-14 px-6 bg-[#020617] text-white placeholder:text-slate-600 focus:outline-none font-bold text-xs tracking-widest"
-                        required
-                      />
-                      <Button type="submit" size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-14 text-xs font-black uppercase tracking-[0.2em] rounded-none">
-                        Request Audit
-                      </Button>
-                    </form>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="py-12"
-                  >
-                    <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-8" />
-                    <h2 className="text-3xl md:text-5xl font-black mb-4 text-white tracking-tighter uppercase">Request Received.</h2>
-                    <p className="text-slate-400 text-lg max-w-xl mx-auto font-medium">
-                      Our Enterprise Team has been notified. You will receive a secure communication link within 24 hours to begin your spend recovery audit.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <h2 className="text-4xl md:text-6xl font-black mb-8 text-white tracking-tighter uppercase">Secure Your Recovery.</h2>
+              <p className="text-slate-400 text-lg mb-12 max-w-2xl mx-auto font-medium">
+                Auditing firms in FL, TX, and CA. Reclaim lost spend within 14 business days.
+              </p>
+              <ContactForm />
             </div>
           </div>
         </section>
@@ -415,7 +420,7 @@ export default function Home() {
               <AccordionItem value="item-1" className="border-slate-800">
                 <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6">State-Specific Compliance</AccordionTrigger>
                 <AccordionContent className="text-slate-400 text-sm leading-relaxed font-medium pb-6">
-                  We are natively built for UTBMS, CCPA, CPRA, and Florida Rule 4-1.5 standards. Our data sovereignty protocols exceed those required by the state legal boards of California, Texas, and Florida.
+                  We are natively built for UTBMS, CCPA, CPRA, and {stateData.rule} standards. Our data sovereignty protocols exceed those required by the state legal boards of California, Texas, and Florida.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2" className="border-slate-800">
@@ -430,29 +435,17 @@ export default function Home() {
       </main>
 
       {/* Market Connectivity Bar */}
-      <div className="bg-[#020617] border-y border-slate-800 py-4">
+      <div className="bg-[#020617] border-y border-slate-800 py-4 relative z-10">
         <div className="container mx-auto px-6 flex flex-wrap justify-center items-center gap-x-12 gap-y-4 text-[9px] font-black tracking-[0.3em] uppercase text-slate-500">
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          {(Object.keys(STATE_CONFIGS) as Array<keyof typeof STATE_CONFIGS>).map((state) => (
+            <div key={state} className="flex items-center gap-2.5">
+              <div className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+              </div>
+              {state.toUpperCase()} HUB: ACTIVE
             </div>
-            TEXAS HUB: ACTIVE
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-            </div>
-            FLORIDA HUB: ACTIVE
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-            </div>
-            CALIFORNIA HUB: ACTIVE
-          </div>
+          ))}
           <div className="text-slate-800 hidden lg:block">//</div>
           <div className="flex items-center gap-2.5 text-blue-500">
             SYSTEM_STATUS: NOMINAL
@@ -460,7 +453,7 @@ export default function Home() {
         </div>
       </div>
 
-      <footer className="py-16 bg-[#020617] border-t border-slate-800">
+      <footer className="py-16 bg-[#020617] border-t border-slate-800 relative z-10">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
             <div className="flex items-center gap-2">
@@ -468,9 +461,9 @@ export default function Home() {
               <span className="font-bold tracking-tighter text-base">LAWAUDITOR</span>
             </div>
             <div className="flex gap-10 text-slate-600 text-[10px] font-black uppercase tracking-widest">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
+              <a href="#" className="hover:text-white transition-colors" aria-label="Privacy Policy">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors" aria-label="Terms of Service">Terms</a>
+              <a href="#" className="hover:text-white transition-colors" aria-label="Contact Us">Contact</a>
             </div>
             <div className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">
               © 2026 Lawauditor.com
