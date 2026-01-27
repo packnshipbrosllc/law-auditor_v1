@@ -7,13 +7,24 @@ import { Button } from '@/components/ui/button';
 
 interface SettlementCalculatorProps {
   medicalSpecials: number;
+  initialSettlement?: number;
+  initialFeePercent?: number;
 }
 
-export function SettlementCalculator({ medicalSpecials }: SettlementCalculatorProps) {
-  const [settlement, setSettlement] = useState(0);
-  const [feePercent, setFeePercent] = useState(33.33);
+export function SettlementCalculator({ 
+  medicalSpecials, 
+  initialSettlement = 0, 
+  initialFeePercent = 33.33 
+}: SettlementCalculatorProps) {
+  const [settlement, setSettlement] = useState(initialSettlement);
+  const [feePercent, setFeePercent] = useState(initialFeePercent);
   const [advancedCosts, setAdvancedCosts] = useState(0);
   const [clientNet, setClientNet] = useState(0);
+
+  useEffect(() => {
+    setSettlement(initialSettlement);
+    setFeePercent(initialFeePercent);
+  }, [initialSettlement, initialFeePercent]);
 
   useEffect(() => {
     const fee = settlement * (feePercent / 100);

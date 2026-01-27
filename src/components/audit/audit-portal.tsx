@@ -16,8 +16,75 @@ export function AuditPortal() {
   const [leakage, setLeakage] = useState(0);
   const [medicalSpecials, setMedicalSpecials] = useState(0);
   const [invoiceCount, setInvoiceCount] = useState(0);
+  const [isSampleData, setIsSampleData] = useState(false);
+
+  const loadSampleData = () => {
+    setIsSampleData(true);
+    setMode('pi');
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+      const sampleViolations: Violation[] = [
+        {
+          id: 's1',
+          type: 'critical',
+          title: 'Upcoded Evaluation (CPT 99215)',
+          description: 'Provider charged for Comprehensive Complexity ($385) while patient records indicate Low Complexity (Level 3).',
+          fix: 'Re-code to CPT 99213 ($165). Savings: $220.00',
+          line: 1
+        },
+        {
+          id: 's2',
+          type: 'critical',
+          title: 'Duplicate MRI Charge',
+          description: 'Identical charge for Lumbar MRI detected from both the surgical center and the imaging hub.',
+          fix: 'Reject duplicate $1,250.00 imaging fee.',
+          line: 14
+        },
+        {
+          id: 's3',
+          type: 'warning',
+          title: 'Unbundled Surgical Tray',
+          description: 'Surgical tray supplies billed separately from the primary procedure fee.',
+          fix: 'Deduct $450.00 unbundled supply cost.',
+          line: 22
+        },
+        {
+          id: 's4',
+          type: 'critical',
+          title: 'Unauthorized Assistant Surgeon',
+          description: 'Charge for Assistant Surgeon ($1,800) not pre-authorized or medically necessary for this procedure.',
+          fix: 'Full rejection of assistant surgeon fee.',
+          line: 5
+        },
+        {
+          id: 's5',
+          type: 'warning',
+          title: 'Phantom Physical Therapy',
+          description: 'Charge for 60 minutes of PT manual therapy; records show patient was in the facility for only 30 minutes.',
+          fix: 'Apply 50% haircut to therapy time entries.',
+          line: 31
+        },
+        {
+          id: 's6',
+          type: 'warning',
+          title: 'Administrative Surcharge',
+          description: 'Medical record retrieval fee ($75) exceeds state-mandated maximum for non-litigation requests.',
+          fix: 'Cap at $25.00 statutory limit.',
+          line: 45
+        }
+      ];
+
+      setViolations(sampleViolations);
+      setMedicalSpecials(12450.00);
+      setLeakage(4250.00);
+      setInvoiceCount(1);
+      setIsProcessing(false);
+    }, 1500);
+  };
 
   const handleFilesAccepted = async (files: File[]) => {
+    setIsSampleData(false);
     setIsProcessing(true);
     setInvoiceCount(prev => prev + files.length);
 
@@ -149,9 +216,20 @@ export function AuditPortal() {
             {/* Dropzone Section */}
             <section>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
-                  {mode === 'corporate' ? 'Invoice Intake' : 'Medical Records & Billing'}
-                </h2>
+                <div className="flex items-center gap-4">
+                  <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
+                    {mode === 'corporate' ? 'Invoice Intake' : 'Medical Records & Billing'}
+                  </h2>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={loadSampleData}
+                    disabled={isProcessing}
+                    className="h-7 text-[9px] font-black uppercase tracking-widest border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 rounded-none px-3"
+                  >
+                    Load Sample PI Case
+                  </Button>
+                </div>
                 <div className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Max 50MB per file</div>
               </div>
               <Dropzone onFilesAccepted={handleFilesAccepted} isProcessing={isProcessing} />
@@ -214,7 +292,11 @@ export function AuditPortal() {
               label={mode === 'corporate' ? 'At-Risk Revenue' : 'Billing Leakage Recovery'}
             />
             {mode === 'pi' && (
-              <SettlementCalculator medicalSpecials={medicalSpecials} />
+              <SettlementCalculator 
+                medicalSpecials={medicalSpecials} 
+                initialSettlement={isSampleData ? 100000 : 0}
+                initialFeePercent={isSampleData ? 33.33 : 33.33}
+              />
             )}
           </aside>
         </div>
