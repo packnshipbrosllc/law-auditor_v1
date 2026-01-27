@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    // COMPLIANCE: Ephemeral processing only. No PII persisted per CCPA 2026.
     const { email } = await request.json();
 
     if (!email) {

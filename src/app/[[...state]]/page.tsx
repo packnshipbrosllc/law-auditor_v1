@@ -58,19 +58,21 @@ export default function Home({ params }: PageProps) {
   
   const [terminalStep, setTerminalStep] = useState(0);
   const terminalMessages = [
-    "Scanning invoices...",
-    "UTBMS Compliance Verified",
+    "Analyzing data for inconsistencies...",
+    "UTBMS Syntax Validated",
     "Purging sensitive data...",
     "Status: Secure"
   ];
 
   // Mock Dashboard Data
   const [recoveredFees, setRecoveredFees] = useState(1248500);
-  const [auditedInvoices, setAuditedInvoices] = useState(842);
+  const [invoicesAnalyzed, setInvoicesAnalyzed] = useState(842);
 
   // ROI Calculator State
   const [monthlySpend, setMonthlySpend] = useState(50000);
   const projectedRecoveryMin = monthlySpend * 0.12;
+
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -79,7 +81,7 @@ export default function Home({ params }: PageProps) {
     
     const dataTimer = setInterval(() => {
       setRecoveredFees(prev => prev + Math.floor(Math.random() * 1000));
-      setAuditedInvoices(prev => prev + (Math.random() > 0.8 ? 1 : 0));
+      setInvoicesAnalyzed(prev => prev + (Math.random() > 0.8 ? 1 : 0));
     }, 5000);
 
     return () => {
@@ -92,26 +94,33 @@ export default function Home({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-50 selection:bg-blue-600 selection:text-white font-sans antialiased relative">
+      {/* SaaS Notice Banner */}
+      <div className="bg-blue-600/10 border-b border-blue-500/20 py-2 text-center relative z-[200]">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400">
+          LawAuditor is a technology platform. We are not a law firm and do not provide legal advice.
+        </p>
+      </div>
+
       {/* Visual Texture Overlay */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
       {/* Navbar: Sticky with glassmorphism */}
-      <nav className="fixed top-0 w-full z-[150] border-b border-slate-800/50 bg-[#020617]/70 backdrop-blur-xl">
+      <nav className="fixed top-8 w-full z-[150] border-b border-slate-800/50 bg-[#020617]/70 backdrop-blur-xl">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white border border-blue-400/20">L</div>
-            <span className="text-lg font-bold tracking-tighter">LAWAUDITOR</span>
+            <span className="text-lg font-bold tracking-tighter text-white">LAWAUDITOR</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            <a href="#dashboard" className="hover:text-white transition-colors" aria-label="Go to Dashboard section">Dashboard</a>
-            <a href="#security" className="hover:text-white transition-colors" aria-label="Go to Security Architecture section">Security Architecture</a>
-            <a href="#calculator" className="hover:text-white transition-colors" aria-label="Go to ROI Calculator section">ROI</a>
+            <a href="#dashboard" className="hover:text-white transition-colors" aria-label="Go to Dashboard section">Intelligence</a>
+            <a href="#security" className="hover:text-white transition-colors" aria-label="Go to Security Architecture section">SaaS Architecture</a>
+            <a href="#calculator" className="hover:text-white transition-colors" aria-label="Go to ROI Calculator section">Recovery Projection</a>
             <a href="#faq" className="hover:text-white transition-colors" aria-label="Go to FAQ section">FAQ</a>
           </div>
           <div className="flex items-center gap-4">
             <a href="#demo">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none border border-blue-400/20 shadow-none" aria-label="Request Demo">
-                Request Demo
+                Request Analysis
               </Button>
             </a>
           </div>
@@ -120,7 +129,7 @@ export default function Home({ params }: PageProps) {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="relative pt-40 pb-24 overflow-hidden">
+        <section className="relative pt-48 pb-24 overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
           
           <div className="container mx-auto px-6 relative">
@@ -131,7 +140,7 @@ export default function Home({ params }: PageProps) {
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-none border border-blue-500/20 bg-blue-500/5 text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-8"
               >
                 <ShieldCheck className="w-3 h-3" />
-                Enterprise Spend Recovery
+                Enterprise Data Processing
               </motion.div>
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
@@ -147,15 +156,30 @@ export default function Home({ params }: PageProps) {
                 transition={{ delay: 0.2 }}
                 className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium"
               >
-                Built for the most demanding legal markets in Texas, Florida, and California. 
-                We isolate inefficiencies and reclaim capital with absolute technical security.
+                Data-processing software built for elite firms in Texas, Florida, and California. 
+                We isolate fee inconsistencies with absolute technical security.
               </motion.p>
               
               {/* State Indicator */}
               <div className="flex justify-center gap-4 mb-12">
                 <div className="border border-blue-600 bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest px-6 py-2">
-                  Operational in: {stateData.name}
+                  Software Active in: {stateData.name}
                 </div>
+              </div>
+
+              {/* AB 316 Verification Step */}
+              <div className="max-w-md mx-auto mb-12 p-4 border border-slate-800 bg-slate-900/20 text-left">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    checked={verified} 
+                    onChange={(e) => setVerified(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded-none border-slate-700 bg-slate-950 text-blue-600 focus:ring-offset-0 focus:ring-blue-600"
+                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">
+                    I understand this is an automated analysis and I will perform a human review of all findings before taking action.
+                  </span>
+                </label>
               </div>
 
               <motion.div 
@@ -166,14 +190,19 @@ export default function Home({ params }: PageProps) {
               >
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-blue-600 rounded-none blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                  <a href="#demo">
-                    <Button size="lg" className="relative bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-blue-400/20" aria-label="Secure Recovery Audit">
-                      Secure Recovery Audit
+                  <a href="#demo" onClick={(e) => !verified && e.preventDefault()}>
+                    <Button 
+                      size="lg" 
+                      disabled={!verified}
+                      className="relative bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-blue-400/20 disabled:opacity-30 disabled:cursor-not-allowed" 
+                      aria-label="Secure Analysis Request"
+                    >
+                      Secure Data Analysis
                     </Button>
                   </a>
                 </div>
-                <Button size="lg" variant="outline" className="border-slate-800 bg-transparent hover:bg-slate-900 text-slate-300 px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none" aria-label="Platform Technicals">
-                  Platform Technicals
+                <Button size="lg" variant="outline" className="border-slate-800 bg-transparent hover:bg-slate-900 text-slate-300 px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none" aria-label="Software Technicals">
+                  Software Technicals
                 </Button>
               </motion.div>
             </div>
@@ -208,7 +237,7 @@ export default function Home({ params }: PageProps) {
                       <div className="h-4 w-px bg-slate-800" />
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
                         <Activity className="w-3 h-3 text-blue-500" />
-                        Live Spend Intelligence: {stateData.name}
+                        Data Inconsistency Feed: {stateData.name}
                       </span>
                     </div>
                     <div className="text-[10px] font-mono text-slate-600">v4.0.2 // STABLE</div>
@@ -217,9 +246,9 @@ export default function Home({ params }: PageProps) {
                   {/* Dashboard Content */}
                   <div className="grid md:grid-cols-3 gap-px bg-slate-800">
                     <div className="bg-[#020617] p-8">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Total Audited Invoices</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Invoices Analyzed</div>
                       <div className="text-4xl font-mono font-medium text-white tabular-nums">
-                        {auditedInvoices.toLocaleString()}
+                        {invoicesAnalyzed.toLocaleString()}
                       </div>
                       <div className="mt-4 flex items-center gap-2 text-green-500 text-[10px] font-bold">
                         <TrendingUp className="w-3 h-3" />
@@ -227,12 +256,12 @@ export default function Home({ params }: PageProps) {
                       </div>
                     </div>
                     <div className="bg-[#020617] p-8">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Recovered Legal Fees</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Projected Fee Recovery</div>
                       <div className="text-4xl font-mono font-medium text-blue-500 tabular-nums">
                         ${recoveredFees.toLocaleString()}
                       </div>
                       <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                        Real-time Audit Data
+                        Software Analysis Data
                       </div>
                     </div>
                     <div className="bg-[#020617] p-8">
@@ -309,10 +338,10 @@ export default function Home({ params }: PageProps) {
                       <div className="w-2 h-2 bg-slate-800" />
                       <div className="w-2 h-2 bg-slate-800" />
                     </div>
-                    <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Secure_Audit_Tunnel_v4</div>
+                    <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Secure_Data_Tunnel_v4</div>
                   </div>
                   <div className="space-y-3 font-mono text-[11px] min-h-[160px]">
-                    <div className="text-blue-500 flex gap-2 opacity-50"><span>&gt;</span> <span>Initializing secure audit...</span></div>
+                    <div className="text-blue-500 flex gap-2 opacity-50"><span>&gt;</span> <span>Initializing secure analysis...</span></div>
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={terminalStep}
@@ -325,7 +354,7 @@ export default function Home({ params }: PageProps) {
                     </AnimatePresence>
                     {terminalStep === 3 && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-green-500 font-bold flex gap-2">
-                        <span>&gt;</span> <span>AUDIT COMPLETE: 0 BYTES RETAINED</span>
+                        <span>&gt;</span> <span>ANALYSIS COMPLETE: 0 BYTES RETAINED</span>
                       </motion.div>
                     )}
                   </div>
@@ -420,9 +449,9 @@ export default function Home({ params }: PageProps) {
         <section id="demo" className="py-32 relative">
           <div className="container mx-auto px-6 relative">
             <div className="max-w-4xl mx-auto border border-blue-500/30 bg-blue-600/5 p-12 md:p-20 text-center relative overflow-hidden">
-              <h2 className="text-4xl md:text-6xl font-black mb-8 text-white tracking-tighter uppercase">Secure Your Recovery.</h2>
+              <h2 className="text-4xl md:text-6xl font-black mb-8 text-white tracking-tighter uppercase leading-[0.9]">Secure Your <br/>Analysis.</h2>
               <p className="text-slate-400 text-lg mb-12 max-w-2xl mx-auto font-medium">
-                Auditing firms in FL, TX, and CA. Reclaim lost spend within 14 business days.
+                Analysis for firms in FL, TX, and CA. Process data inconsistencies within 14 business days.
               </p>
               <ContactForm />
             </div>
@@ -432,18 +461,18 @@ export default function Home({ params }: PageProps) {
         {/* FAQ Section */}
         <section id="faq" className="py-32 border-t border-slate-800">
           <div className="container mx-auto px-6 max-w-3xl">
-            <h2 className="text-2xl font-black mb-16 text-center tracking-widest uppercase">Technicals FAQ</h2>
+            <h2 className="text-2xl font-black mb-16 text-center tracking-widest uppercase">Software Technicals FAQ</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1" className="border-slate-800">
-                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6">State-Specific Compliance</AccordionTrigger>
+                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6 text-left">Regulatory Data Processing</AccordionTrigger>
                 <AccordionContent className="text-slate-400 text-sm leading-relaxed font-medium pb-6">
-                  We are natively built for UTBMS, CCPA, CPRA, and {stateData.rule} standards. Our data sovereignty protocols exceed those required by the state legal boards of California, Texas, and Florida.
+                  LawAuditor is a technology platform designed to automate data processing. We are natively built for UTBMS, CCPA, CPRA, and {stateData.rule} standards. Our software assists in identifying billing inconsistencies but does not provide legal conclusions or advice.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2" className="border-slate-800">
-                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6">Fee Recovery Intelligence</AccordionTrigger>
+                <AccordionTrigger className="text-xs font-bold uppercase tracking-widest hover:text-blue-500 no-underline py-6 text-left">Data Analysis Timeline</AccordionTrigger>
                 <AccordionContent className="text-slate-400 text-sm leading-relaxed font-medium pb-6">
-                  Initial spend analysis is completed within 72 hours using proprietary intelligence for the Texas, Florida, and California legal landscapes. Full fee recovery reports are delivered via secure tunnel within 14 business days.
+                  Initial spend data analysis is completed within 72 hours using proprietary software for the Texas, Florida, and California legal markets. Reports are delivered via secure tunnel for human review.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -463,13 +492,13 @@ export default function Home({ params }: PageProps) {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
                 </div>
-                {config.name.toUpperCase()} HUB: ACTIVE
+                {config.name.toUpperCase()} DATA HUB: ACTIVE
               </div>
             );
           })}
           <div className="text-slate-800 hidden lg:block">//</div>
           <div className="flex items-center gap-2.5 text-blue-500">
-            SYSTEM_STATUS: NOMINAL
+            SOFTWARE_STATUS: NOMINAL
           </div>
         </div>
       </div>
@@ -480,10 +509,10 @@ export default function Home({ params }: PageProps) {
             <div>
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-[10px] text-white">L</div>
-                <span className="font-bold tracking-tighter text-base">LAWAUDITOR</span>
+                <span className="font-bold tracking-tighter text-base text-white">LAWAUDITOR</span>
               </div>
-              <p className="text-slate-500 text-xs leading-relaxed max-w-sm mb-6">
-                LawAuditor is a secure auditing platform. We do not provide legal advice. All audits are processed via our Zero-Retention architecture.
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest max-w-sm mb-6 leading-loose">
+                LawAuditor is a technology platform. We are not a law firm and do not provide legal advice. All data processing is performed via our Zero-Retention software architecture.
               </p>
               <div className="flex gap-8 text-slate-600 text-[10px] font-black uppercase tracking-widest">
                 <a href="#" className="hover:text-white transition-colors" aria-label="Privacy Policy">Privacy</a>
@@ -500,7 +529,7 @@ export default function Home({ params }: PageProps) {
                 </span>
               </div>
               <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">
-                © 2026 Lawauditor.com
+                © 2026 LawAuditor SaaS
               </p>
             </div>
           </div>

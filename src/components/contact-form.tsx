@@ -96,12 +96,12 @@ export function ContactForm() {
             className="py-12 text-center"
           >
             <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-8" />
-            <h2 className="text-3xl md:text-5xl font-black mb-4 text-white tracking-tighter uppercase">
-              Request Received.
-            </h2>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto font-medium">
-              Our Enterprise Team has been notified. You will receive a secure communication link within 24 hours to begin your spend recovery audit.
-            </p>
+                <h2 className="text-3xl md:text-5xl font-black mb-4 text-white tracking-tighter uppercase">
+                  Request Received.
+                </h2>
+                <p className="text-slate-400 text-lg max-w-xl mx-auto font-medium">
+                  Our Enterprise Team has been notified. You will receive a secure communication link within 24 hours to begin your spend recovery analysis.
+                </p>
           </motion.div>
         )}
       </AnimatePresence>

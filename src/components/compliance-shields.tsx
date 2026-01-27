@@ -9,24 +9,24 @@ interface ComplianceShieldsProps {
 
 const STATE_CONTENT = {
   florida: {
-    badge: "Florida Rule 4-1.5 Integrity",
-    copy: "Engineered for Florida Rule 4-1.5 Integrity. Our auditing logic helps firms ensure fee reasonableness and compliance with the 75/25 primary-secondary responsibility standards.",
+    badge: "Florida Rule 4-1.5 Verification Assistant",
+    copy: "A data-processing tool to assist in Rule 4-1.5 verification. Our software helps firms identify billing inconsistencies and ensures fee reasonableness in compliance with the 75/25 primary-secondary responsibility standards.",
     icon: ShieldCheck,
     color: "text-blue-400",
     borderColor: "border-blue-500/20",
     bgColor: "bg-blue-500/5",
   },
   texas: {
-    badge: "Texas Rule 1.04 Standard",
-    copy: "Aligned with Texas Rule 1.04 Standards. We help Texas firms avoid 'unconscionable fee' risks through objective, data-driven audit reporting.",
+    badge: "Texas Rule 1.04 Consistency Tool",
+    copy: "An automated consistency-checker for Rule 1.04 fee transparency. Aligned with Texas Rule 1.04 Standards, LawAuditor helps firms mitigate risk through objective, data-driven report generation.",
     icon: Shield,
     color: "text-amber-400",
     borderColor: "border-amber-500/20",
     bgColor: "bg-amber-500/5",
   },
   california: {
-    badge: "SB 37 Verified Privacy",
-    copy: "Fully compliant with CA SB 37. Unlike traditional lead-gen tools, LawAuditor's Zero-Retention model ensures your firm's data is never stored, sold, or accessible to third parties. We are a software-first solution, not a capper or runner service.",
+    badge: "SB 37 & AB 316 Verified SaaS",
+    copy: "CA SB 37 Transparency: LawAuditor is a software provider. Business Address: 123 California St, San Francisco, CA 94104. We are not a Lawyer Referral Service (LRS) and receive no fees for referrals. Fully compliant with CA AB 316 AI responsibility standards.",
     icon: ShieldAlert,
     color: "text-emerald-400",
     borderColor: "border-emerald-500/20",
