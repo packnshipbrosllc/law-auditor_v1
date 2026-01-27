@@ -22,7 +22,7 @@ export function ComplianceShields({ state }: ComplianceShieldsProps) {
     },
     texas: {
       badge: `${metadata.aiActName} Compliance`,
-      copy: `Automated software assistant for fee-transparency verification under Rule 1.04. Designed for the Houston and Tampa markets. Address: ${SITE_CONFIG.address}.`,
+      copy: `Automated software assistant for fee-transparency verification under Rule 1.04. Designed for the Houston and Dallas markets. Address: ${SITE_CONFIG.address}.`,
       icon: Shield,
       color: "text-amber-400",
       borderColor: "border-amber-500/20",

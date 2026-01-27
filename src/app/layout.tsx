@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { cookies } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,19 +15,38 @@ const geistMono = Geist_Mono({
 
 import { SITE_CONFIG, STATE_METADATA } from "@/config/siteConfig";
 
-const primaryMetadata = STATE_METADATA[SITE_CONFIG.primaryState === 'TX' ? 'texas' : SITE_CONFIG.primaryState === 'CA' ? 'california' : 'florida'];
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const stateCode = cookieStore.get('user-state')?.value || 'CA';
+  
+  const stateKey = stateCode.toLowerCase() === 'tx' ? 'texas' : 
+                   stateCode.toLowerCase() === 'fl' ? 'florida' : 
+                   'california';
+                   
+  const primaryMetadata = STATE_METADATA[stateKey];
 
-export const metadata: Metadata = {
-  title: `${SITE_CONFIG.companyName} | Enterprise Data Analysis for ${primaryMetadata.name}`,
-  description: `Secure, zero-retention AI analysis to recover lost legal spend. Optimized for ${primaryMetadata.name} regulatory standards.`,
-  keywords: ["legal data analysis", "UTBMS compliance", "legal spend recovery", `${primaryMetadata.name} legal tech`, "zero-retention AI analysis"],
-  openGraph: {
-    title: `${SITE_CONFIG.companyName} | Precision Data Analysis`,
-    description: "Recover lost legal spend with zero data risk.",
-    url: "https://lawauditor.com",
-    siteName: SITE_CONFIG.companyName,
-    type: "website",
-  },
+  return {
+    title: `${SITE_CONFIG.companyName} | Enterprise Data Analysis for ${primaryMetadata.name}`,
+    description: `Secure, zero-retention AI analysis to recover lost legal spend. Optimized for ${primaryMetadata.name} regulatory standards.`,
+    keywords: ["legal data analysis", "UTBMS compliance", "legal spend recovery", `${primaryMetadata.name} legal tech`, "zero-retention AI analysis"],
+    icons: {
+      icon: '/favicon.ico',
+      shortcut: '/favicon-32x32.png',
+      apple: '/apple-touch-icon.png',
+    },
+    manifest: '/site.webmanifest',
+    openGraph: {
+      title: `${SITE_CONFIG.companyName} | Precision Data Analysis`,
+      description: "Recover lost legal spend with zero data risk.",
+      url: "https://lawauditor.com",
+      siteName: SITE_CONFIG.companyName,
+      type: "website",
+    },
+  };
+}
+
+export const viewport = {
+  themeColor: '#1e3a8a',
 };
 
 export default function RootLayout({
@@ -36,10 +56,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <head>
-        <link rel="icon" href="/icon-gavel.png?v=3" />
-        <link rel="apple-touch-icon" href="/icon-gavel.png?v=3" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-blue-600 selection:text-white`}
       >

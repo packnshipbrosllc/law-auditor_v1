@@ -10,8 +10,11 @@ import { ContactForm } from "@/components/contact-form";
 import { ComplianceShields } from "@/components/compliance-shields";
 import { ComplianceBanner } from "@/components/compliance-banner";
 import { VerificationModal } from "@/components/verification-modal";
+import { Header } from "@/components/header";
 import Link from "next/link";
+import Image from "next/image";
 import { getActiveStateMetadata, SITE_CONFIG, STATE_METADATA } from "@/config/siteConfig";
+import { getStateName } from "@/lib/utils";
 
 const STATE_MAP: Record<string, string> = {
   tx: "texas",
@@ -25,13 +28,32 @@ interface PageProps {
 
 export default function Home({ params }: PageProps) {
   const resolvedParams = use(params);
-  const stateParam = resolvedParams.state?.[0]?.toLowerCase();
+  const stateParam = resolvedParams.state?.[0]?.toUpperCase();
   
-  // The client-side logic in getActiveStateMetadata will try to use the cookie
-  // then fallback to SITE_CONFIG.primaryState ('TX'), but the middleware
-  // now defaults to 'CA' if no geo is detected.
-  const normalizedState = stateParam ? (STATE_MAP[stateParam] || stateParam) : undefined;
-  const stateMetadata = getActiveStateMetadata(normalizedState);
+  // Initialize state from param or default
+  const [activeStateCode, setActiveStateCode] = useState<string>(stateParam || 'CA');
+
+  // Sync with cookie for real-time updates if no param is present
+  useEffect(() => {
+    const checkCookie = () => {
+      if (!stateParam) {
+        const cookieValue = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('user-state='))
+          ?.split('=')[1];
+        if (cookieValue && cookieValue.toUpperCase() !== activeStateCode) {
+          setActiveStateCode(cookieValue.toUpperCase());
+        }
+      }
+    };
+
+    checkCookie();
+    // Optional: Add interval to check for manual cookie changes
+    const interval = setInterval(checkCookie, 1000);
+    return () => clearInterval(interval);
+  }, [stateParam, activeStateCode]);
+
+  const stateMetadata = getActiveStateMetadata(activeStateCode);
   const activeStateKey = stateMetadata.name.toLowerCase();
   
   const [terminalStep, setTerminalStep] = useState(0);
@@ -79,31 +101,22 @@ export default function Home({ params }: PageProps) {
         </p>
       </div>
 
+      {/* Global Watermark */}
+      <div className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden">
+        <div className="relative w-[800px] h-[800px] opacity-[0.05] grayscale">
+          <Image 
+            src="/logo.png" 
+            alt="" 
+            fill 
+            className="object-contain"
+          />
+        </div>
+      </div>
+
       {/* Visual Texture Overlay */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
-      {/* Navbar: Sticky with glassmorphism */}
-      <nav className="fixed top-8 w-full z-[150] border-b border-slate-800/50 bg-[#020617]/70 backdrop-blur-xl">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white border border-blue-400/20">L</div>
-            <span className="text-lg font-bold tracking-tighter text-white">LAWAUDITOR</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            <a href="#dashboard" className="hover:text-white transition-colors" aria-label="Go to Dashboard section">Intelligence</a>
-            <a href="#security" className="hover:text-white transition-colors" aria-label="Go to Security Architecture section">SaaS Architecture</a>
-            <a href="#calculator" className="hover:text-white transition-colors" aria-label="Go to ROI Calculator section">Recovery Projection</a>
-            <a href="#faq" className="hover:text-white transition-colors" aria-label="Go to FAQ section">FAQ</a>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="#demo">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none border border-blue-400/20 shadow-none" aria-label="Request Demo">
-                Request Analysis
-              </Button>
-            </a>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <main className="relative z-10">
         {/* Hero Section */}
@@ -112,6 +125,23 @@ export default function Home({ params }: PageProps) {
           
           <div className="container mx-auto px-6 relative">
             <div className="max-w-4xl mx-auto text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative w-40 h-40 mx-auto mb-12"
+              >
+                {/* Logo Glow Effect */}
+                <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
+                <Image 
+                  src="/logo.png" 
+                  alt="LawAuditor Official Logo" 
+                  fill 
+                  className="object-contain relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                  priority
+                />
+              </motion.div>
+
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -141,7 +171,7 @@ export default function Home({ params }: PageProps) {
               {/* State Indicator */}
               <div className="flex justify-center gap-4 mb-12">
                 <div className="border border-blue-600 bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest px-6 py-2">
-                  Software Active in: {stateMetadata.name}
+                  Software Active in: {getStateName(activeStateCode)}
                 </div>
               </div>
 
@@ -240,7 +270,7 @@ export default function Home({ params }: PageProps) {
                       <div className="h-4 w-px bg-slate-800" />
                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
                             <Activity className="w-3 h-3 text-blue-500" />
-                            Data Inconsistency Feed: {stateMetadata.name}
+                            Data Inconsistency Feed: {getStateName(activeStateCode)}
                           </span>
                         </div>
                         <div className="text-[10px] font-mono text-slate-600">v4.0.2 // STABLE</div>
@@ -504,8 +534,15 @@ export default function Home({ params }: PageProps) {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 items-start mb-16">
             <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-[10px] text-white">L</div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="relative w-8 h-8">
+                  <Image 
+                    src="/logo.png" 
+                    alt="LawAuditor Official Logo" 
+                    fill 
+                    className="object-contain"
+                  />
+                </div>
                 <span className="font-bold tracking-tighter text-base text-white">LAWAUDITOR</span>
               </div>
               <div className="space-y-4">
@@ -541,7 +578,7 @@ export default function Home({ params }: PageProps) {
               <div className="flex items-center md:justify-end gap-2 text-slate-500">
                 <MapPin className="w-3 h-3 text-blue-500" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">
-                  LawAuditor | {stateMetadata.name} Hub | {stateMetadata.address}
+                  LawAuditor | {getStateName(activeStateCode)} Hub | {stateMetadata.address}
                 </span>
               </div>
               <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">

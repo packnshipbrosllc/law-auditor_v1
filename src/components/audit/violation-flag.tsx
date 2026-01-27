@@ -70,3 +70,4 @@ export function ViolationFlag({ violation, onFix }: ViolationFlagProps) {
   );
 }
 
+

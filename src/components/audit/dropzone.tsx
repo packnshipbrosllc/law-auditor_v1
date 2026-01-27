@@ -116,3 +116,4 @@ export function Dropzone({ onFilesAccepted, isProcessing }: DropzoneProps) {
   );
 }
 
+

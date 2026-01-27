@@ -1,3 +1,5 @@
+import { getStateName } from "@/lib/utils";
+
 export type StateCode = 'TX' | 'CA' | 'FL';
 
 export interface StateMetadata {
@@ -22,7 +24,7 @@ export const STATE_METADATA: Record<string, StateMetadata> = {
     name: 'Texas',
     aiActName: 'Texas Responsible AI Governance Act (SB 1311)',
     complianceRefs: ['SB 1311', 'TX Rule 1.04'],
-    regionalTies: 'Built for the demanding legal markets of Houston and Tampa.',
+    regionalTies: 'Built for the demanding legal markets of Houston and the Texas ecosystem.',
     rule: 'Texas SB 1311 Standards',
     address: SITE_CONFIG.address,
     disclosureText: `In accordance with Texas SB 1311 and Rule 1.04, LawAuditor is strictly a data-processing tool. All outputs must be reviewed by a licensed attorney (Human-in-the-Loop) who remains responsible for all findings.`,
@@ -31,7 +33,7 @@ export const STATE_METADATA: Record<string, StateMetadata> = {
     name: 'California',
     aiActName: 'California AI Transparency Act (AB 853)',
     complianceRefs: ['AB 853', 'SB 37', 'AB 316'],
-    regionalTies: 'Optimized for Silicon Valley and Los Angeles innovation.',
+    regionalTies: 'Optimized for the Sacramento and Silicon Valley innovation hubs.',
     rule: 'CA AB 853 Compliance',
     address: SITE_CONFIG.address,
     disclosureText: `In accordance with CA AB 853 and SB 37, LawAuditor is a software-first analysis tool. The user remains the definitive Decision Maker, and all results require an independent human review.`,
@@ -40,7 +42,7 @@ export const STATE_METADATA: Record<string, StateMetadata> = {
     name: 'Florida',
     aiActName: 'Florida AI Ethics Standards (Rule 4-1.5)',
     complianceRefs: ['FL Rule 4-1.5', 'Bar Guidelines'],
-    regionalTies: 'Serving the Miami and Tampa legal ecosystems.',
+    regionalTies: 'Serving the Tampa and Miami legal ecosystems.',
     rule: 'Florida Rule 4-1.5',
     address: SITE_CONFIG.address,
     disclosureText: `Aligned with Florida Rule 4-1.5, LawAuditor provides automated assistance for fee-transparency verification. It is not a substitute for professional legal judgment; human review is mandatory.`,
@@ -58,7 +60,7 @@ export function getActiveStateMetadata(stateKey?: string): StateMetadata {
     resolvedKey = cookieValue;
   }
 
-  const normalizedKey = resolvedKey?.toLowerCase() || 'ca'; // Default to CA for Sacramento testing
+  const normalizedKey = resolvedKey?.toLowerCase() || 'ca';
   
   const mapping: Record<string, string> = {
     tx: 'texas',
