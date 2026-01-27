@@ -27,8 +27,9 @@ export default function Home({ params }: PageProps) {
   const resolvedParams = use(params);
   const stateParam = resolvedParams.state?.[0]?.toLowerCase();
   
-  // Use state from URL param if available, otherwise fallback to Texas
   // The client-side logic in getActiveStateMetadata will try to use the cookie
+  // then fallback to SITE_CONFIG.primaryState ('TX'), but the middleware
+  // now defaults to 'CA' if no geo is detected.
   const normalizedState = stateParam ? (STATE_MAP[stateParam] || stateParam) : undefined;
   const stateMetadata = getActiveStateMetadata(normalizedState);
   const activeStateKey = stateMetadata.name.toLowerCase();

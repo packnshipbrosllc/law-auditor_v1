@@ -14,7 +14,7 @@ export const SITE_CONFIG = {
   companyName: 'LawAuditor',
   entityName: 'LawAuditor (A Technology Platform)',
   address: '1809 S Street, Suite 101, #204, Sacramento, CA 95811',
-  primaryState: 'TX' as StateCode,
+  primaryState: 'CA' as StateCode,
 };
 
 export const STATE_METADATA: Record<string, StateMetadata> = {
@@ -58,7 +58,7 @@ export function getActiveStateMetadata(stateKey?: string): StateMetadata {
     resolvedKey = cookieValue;
   }
 
-  const normalizedKey = resolvedKey?.toLowerCase() || SITE_CONFIG.primaryState.toLowerCase();
+  const normalizedKey = resolvedKey?.toLowerCase() || 'ca'; // Default to CA for Sacramento testing
   
   const mapping: Record<string, string> = {
     tx: 'texas',
@@ -69,6 +69,6 @@ export function getActiveStateMetadata(stateKey?: string): StateMetadata {
     florida: 'florida'
   };
   
-  const key = mapping[normalizedKey] || 'texas';
+  const key = mapping[normalizedKey] || 'california';
   return STATE_METADATA[key];
 }

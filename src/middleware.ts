@@ -15,26 +15,41 @@ export function middleware(request: NextRequest) {
     state = region.toUpperCase();
   }
 
+  // Debug log for development
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[Middleware] Detected Region: ${region || 'Unknown'}, Assigned State: ${state}`);
+    console.log(`[Middleware] Region: ${region || 'Unknown'} -> State: ${state}`);
   }
 
-  // Create response
-  const response = NextResponse.next();
+  // Create headers object to pass to the request
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-user-state', state);
 
-  // Set header and cookie for state persistence
-  response.headers.set('x-user-state', state);
-  
-  // Set cookie with 30 day expiration
+  // Create response with modified request headers
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // Persist state in cookie for client-side access
   response.cookies.set('user-state', state, {
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: 60 * 60 * 24 * 30, // 30 days
     path: '/',
   });
 
   return response;
 }
 
-// Only run middleware on the main routes
+// Ensure middleware runs on all relevant routes
 export const config = {
-  matcher: ['/', '/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };
