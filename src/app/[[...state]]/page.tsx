@@ -5,30 +5,38 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Shield, Lock, Server, ShieldCheck, TrendingUp, Activity, Scale, Gavel, BarChart3, Globe, Zap } from "lucide-react";
+import { Shield, Lock, Server, ShieldCheck, TrendingUp, Activity, Scale, Gavel, BarChart3, Globe, Zap, MapPin } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
+import { ComplianceShields } from "@/components/compliance-shields";
 
 type StateConfig = {
   name: string;
   rule: string;
   compliance: string[];
+  footerInfo?: string;
+  addressLabel?: string;
 };
 
 const STATE_CONFIGS: Record<string, StateConfig> = {
   texas: {
     name: "Texas",
-    rule: "Texas Bar Guidelines",
-    compliance: ["UTBMS", "State Bar Certified"],
+    rule: "Texas Rule 1.04",
+    compliance: ["UTBMS", "TX Rule 1.04"],
+    footerInfo: "LawAuditor | Principal Office: 123 Texas Ave, Houston, TX 77002",
+    addressLabel: "Principal Office",
   },
   florida: {
     name: "Florida",
     rule: "Florida Rule 4-1.5",
     compliance: ["UTBMS", "FL Rule 4-1.5"],
+    footerInfo: "LawAuditor | 456 Florida Blvd, Tampa, FL 33602",
   },
   california: {
     name: "California",
-    rule: "CCPA/CPRA Compliance",
-    compliance: ["CCPA", "CPRA", "UTBMS"],
+    rule: "CA SB 37 Compliance",
+    compliance: ["CCPA", "CPRA", "SB 37"],
+    footerInfo: "LawAuditor | Bona Fide Office: 789 California St, San Francisco, CA 94104",
+    addressLabel: "Bona Fide Office",
   },
 };
 
@@ -168,6 +176,15 @@ export default function Home({ params }: PageProps) {
                   Platform Technicals
                 </Button>
               </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Compliance Shields Injection */}
+        <section className="pb-32">
+          <div className="container mx-auto px-6">
+            <div className="max-w-5xl mx-auto">
+              <ComplianceShields state={activeStateKey as any} />
             </div>
           </div>
         </section>
@@ -437,15 +454,19 @@ export default function Home({ params }: PageProps) {
       {/* Market Connectivity Bar */}
       <div className="bg-[#020617] border-y border-slate-800 py-4 relative z-10">
         <div className="container mx-auto px-6 flex flex-wrap justify-center items-center gap-x-12 gap-y-4 text-[9px] font-black tracking-[0.3em] uppercase text-slate-500">
-          {(Object.keys(STATE_CONFIGS) as Array<keyof typeof STATE_CONFIGS>).map((state) => (
-            <div key={state} className="flex items-center gap-2.5">
-              <div className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          {(Object.keys(STATE_MAP) as Array<keyof typeof STATE_MAP>).map((key) => {
+            const configKey = STATE_MAP[key];
+            const config = STATE_CONFIGS[configKey];
+            return (
+              <div key={key} className="flex items-center gap-2.5">
+                <div className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                </div>
+                {config.name.toUpperCase()} HUB: ACTIVE
               </div>
-              {state.toUpperCase()} HUB: ACTIVE
-            </div>
-          ))}
+            );
+          })}
           <div className="text-slate-800 hidden lg:block">//</div>
           <div className="flex items-center gap-2.5 text-blue-500">
             SYSTEM_STATUS: NOMINAL
@@ -455,18 +476,32 @@ export default function Home({ params }: PageProps) {
 
       <footer className="py-16 bg-[#020617] border-t border-slate-800 relative z-10">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-10">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-[10px] text-white">L</div>
-              <span className="font-bold tracking-tighter text-base">LAWAUDITOR</span>
+          <div className="grid md:grid-cols-2 gap-12 items-start mb-16">
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-[10px] text-white">L</div>
+                <span className="font-bold tracking-tighter text-base">LAWAUDITOR</span>
+              </div>
+              <p className="text-slate-500 text-xs leading-relaxed max-w-sm mb-6">
+                LawAuditor is a secure auditing platform. We do not provide legal advice. All audits are processed via our Zero-Retention architecture.
+              </p>
+              <div className="flex gap-8 text-slate-600 text-[10px] font-black uppercase tracking-widest">
+                <a href="#" className="hover:text-white transition-colors" aria-label="Privacy Policy">Privacy</a>
+                <a href="#" className="hover:text-white transition-colors" aria-label="Terms of Service">Terms</a>
+                <a href="#" className="hover:text-white transition-colors" aria-label="Contact Us">Contact</a>
+              </div>
             </div>
-            <div className="flex gap-10 text-slate-600 text-[10px] font-black uppercase tracking-widest">
-              <a href="#" className="hover:text-white transition-colors" aria-label="Privacy Policy">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors" aria-label="Terms of Service">Terms</a>
-              <a href="#" className="hover:text-white transition-colors" aria-label="Contact Us">Contact</a>
-            </div>
-            <div className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">
-              © 2026 Lawauditor.com
+            
+            <div className="md:text-right space-y-4">
+              <div className="flex items-center md:justify-end gap-2 text-slate-500">
+                <MapPin className="w-3 h-3 text-blue-500" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">
+                  {stateData.footerInfo}
+                </span>
+              </div>
+              <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">
+                © 2026 Lawauditor.com
+              </p>
             </div>
           </div>
         </div>
