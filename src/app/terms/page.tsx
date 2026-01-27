@@ -37,43 +37,37 @@ export default function TermsOfService() {
 
           <div className="space-y-12 border-t border-slate-800 pt-12">
             <section className="space-y-4">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">1. SaaS Platform Disclosure</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">1. No Legal Advice</h2>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                LawAuditor is a Software-as-a-Service (SaaS) platform providing data-processing tools for legal bill analysis. 
-                We are a technology provider, not a law firm. We do not provide legal advice, legal representation, or 
-                attorney-client relationships.
+                LawAuditor does not interpret law; it identifies data inconsistencies based on user-defined parameters. We are a technology provider, not a law firm. We do not provide legal advice, legal representation, or lawyer referral services.
               </p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">2. No Attorney-Client Relationship</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">2. Liability Limitation</h2>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                By using LawAuditor, you acknowledge that no attorney-client relationship is formed between you and 
-                the platform or its owners. All interactions are strictly for the purpose of utilizing automated data analysis software.
+                The platform owner is not responsible for any legal or financial outcomes resulting from the use of this software. Use of this software does not create an attorney-client relationship.
               </p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">3. Human-in-the-Loop Requirement</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">3. Human-in-the-Loop requirement</h2>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                All software outputs are for informational purposes only. LawAuditor is a Decision Support Tool, 
-                not a Decision Maker. In accordance with CA AB 316 and professional responsibility standards, 
-                all findings must be verified by a licensed attorney before any action is taken based on the analysis.
+                All software outputs are for informational purposes only. LawAuditor is a Decision Support Tool, not a Decision Maker. All findings must be verified by a licensed attorney before any action is taken.
               </p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">4. Zero-Retention Data Policy</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">4. Zero-Retention Privacy</h2>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                Our architecture is designed for ephemeral processing. We do not persist PII or sensitive document 
-                content to permanent storage, in compliance with CCPA 2026 and enterprise security standards.
+                Per our privacy architecture, no user-uploaded data is permanently stored. Our architecture is designed for ephemeral processing in volatile RAM only.
               </p>
             </section>
 
             <section className="space-y-4 border-t border-slate-800 pt-12">
               <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest leading-loose">
-                Last Updated: January 2026. LawAuditor is a registered technology provider. 
-                Business Address: 123 California St, San Francisco, CA 94104.
+                Last Updated: January 2026. Entity: LawAuditor (A Technology Platform). <br/>
+                Address: 1809 S Street, Suite 101, #204, Sacramento, CA 95811.
               </p>
             </section>
           </div>

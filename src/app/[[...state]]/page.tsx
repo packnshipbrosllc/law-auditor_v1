@@ -9,6 +9,7 @@ import { Shield, Lock, Server, ShieldCheck, TrendingUp, Activity, Scale, Gavel, 
 import { ContactForm } from "@/components/contact-form";
 import { ComplianceShields } from "@/components/compliance-shields";
 import { ComplianceBanner } from "@/components/compliance-banner";
+import { VerificationModal } from "@/components/verification-modal";
 import Link from "next/link";
 
 type StateConfig = {
@@ -75,6 +76,8 @@ export default function Home({ params }: PageProps) {
   const projectedRecoveryMin = monthlySpend * 0.12;
 
   const [verified, setVerified] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [hasProfessionalVerification, setHasProfessionalVerification] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -192,16 +195,22 @@ export default function Home({ params }: PageProps) {
               >
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-blue-600 rounded-none blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                  <a href="#demo" onClick={(e) => !verified && e.preventDefault()}>
-                    <Button 
-                      size="lg" 
-                      disabled={!verified}
-                      className="relative bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-blue-400/20 disabled:opacity-30 disabled:cursor-not-allowed" 
-                      aria-label="Secure Analysis Request"
-                    >
-                      Secure Data Analysis
-                    </Button>
-                  </a>
+                  <Button 
+                    size="lg" 
+                    onClick={() => {
+                      if (!verified) return;
+                      if (!hasProfessionalVerification) {
+                        setIsVerificationModalOpen(true);
+                      } else {
+                        const demoSection = document.getElementById('demo');
+                        demoSection?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="relative bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none border border-blue-400/20 disabled:opacity-30 disabled:cursor-not-allowed" 
+                    aria-label="Secure Analysis Request"
+                  >
+                    Secure Data Analysis
+                  </Button>
                 </div>
                 <Button size="lg" variant="outline" className="border-slate-800 bg-transparent hover:bg-slate-900 text-slate-300 px-8 h-12 text-sm font-bold uppercase tracking-widest rounded-none" aria-label="Software Technicals">
                   Software Technicals
@@ -221,15 +230,33 @@ export default function Home({ params }: PageProps) {
               </div>
             </section>
 
-        {/* Dashboard Preview Section */}
-        <section id="dashboard" className="pb-32">
-          <div className="container mx-auto px-6">
-            <div className="max-w-5xl mx-auto">
-              <div className="p-1 bg-gradient-to-br from-slate-700/50 via-slate-800/20 to-slate-900/50 rounded-xl">
-                <div className="bg-[#020617] border border-slate-800 rounded-lg overflow-hidden relative group">
-                  <div className="absolute inset-0 bg-blue-500/[0.02] pointer-events-none" />
-                  
-                  {/* Dashboard Header */}
+            {/* Dashboard Preview Section */}
+            <section id="dashboard" className="pb-32">
+              <div className="container mx-auto px-6">
+                <div className="max-w-5xl mx-auto">
+                  <div className="p-1 bg-gradient-to-br from-slate-700/50 via-slate-800/20 to-slate-900/50 rounded-xl">
+                    <div className="bg-[#020617] border border-slate-800 rounded-lg overflow-hidden relative group">
+                      <div className="absolute inset-0 bg-blue-500/[0.02] pointer-events-none" />
+                      
+                      {!hasProfessionalVerification && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#020617]/80 backdrop-blur-sm">
+                          <div className="text-center p-8">
+                            <Lock className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-black uppercase tracking-widest text-white mb-2">Analysis Results Locked</h3>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6 max-w-xs mx-auto">
+                              Professional user verification required to view data-processing outputs.
+                            </p>
+                            <Button 
+                              onClick={() => setIsVerificationModalOpen(true)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest rounded-none px-8"
+                            >
+                              Verify Professional Status
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dashboard Header */}
                   <div className="border-b border-slate-800 px-6 py-4 flex items-center justify-between bg-slate-900/20">
                     <div className="flex items-center gap-4">
                       <div className="flex gap-1.5">
@@ -516,11 +543,11 @@ export default function Home({ params }: PageProps) {
               </div>
               <div className="space-y-4">
                 <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm">
-                  Business Name: LawAuditor <br/>
-                  Registered Address: 123 California St, San Francisco, CA 94104
+                  Entity: LawAuditor (A Technology Platform) <br/>
+                  Address: 1809 S Street, Suite 101, #204, Sacramento, CA 95811
                 </p>
                 <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest leading-loose max-w-sm">
-                  Not a Lawyer Referral Service. No legal advice provided. LawAuditor is a technology platform. All audits are processed via our Zero-Retention architecture.
+                  LawAuditor is a SaaS provider, not a law firm. We do not provide legal advice, legal representation, or lawyer referral services. Use of this software does not create an attorney-client relationship.
                 </p>
               </div>
               <div className="flex gap-8 mt-8 text-slate-500 text-[10px] font-black uppercase tracking-widest">
@@ -544,6 +571,12 @@ export default function Home({ params }: PageProps) {
           </div>
         </div>
       </footer>
+
+      <VerificationModal 
+        isOpen={isVerificationModalOpen} 
+        onClose={() => setIsVerificationModalOpen(false)}
+        onVerify={() => setHasProfessionalVerification(true)}
+      />
     </div>
   );
 }
