@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Shield, ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { SITE_CONFIG } from "@/config/siteConfig";
 
@@ -17,7 +18,13 @@ export default function TermsOfService() {
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <ChevronLeft className="w-4 h-4 text-slate-500 group-hover:text-blue-500 transition-colors" />
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white border border-blue-400/20">L</div>
+            <Image 
+              src="/wmremove-transformed.jpeg" 
+              alt="LawAuditor Logo" 
+              height={32}
+              width={32}
+              className="h-8 w-auto"
+            />
             <span className="text-lg font-bold tracking-tighter text-white">LAWAUDITOR</span>
           </Link>
         </div>
