@@ -14,6 +14,7 @@ export interface Violation {
   fix: string;
   line?: number;
   potentialRecovery: number;
+  ruleCited?: string;
 }
 
 interface ViolationFlagProps {
@@ -55,6 +56,14 @@ export function ViolationFlag({ violation, onFix }: ViolationFlagProps) {
           <p className="text-slate-400 text-[10px] leading-relaxed font-medium mb-3">
             {violation.description}
           </p>
+          {violation.ruleCited && (
+            <div className="mb-4 flex items-start gap-2 p-2 bg-blue-500/5 border border-blue-500/10">
+              <Info className="w-3 h-3 text-blue-400 mt-0.5" />
+              <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">
+                Citation: {violation.ruleCited}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-3">
             <Button
               variant="outline"

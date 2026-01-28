@@ -32,7 +32,8 @@ export function AuditPortal() {
           description: 'Provider charged for Comprehensive Complexity ($385) while patient records indicate Low Complexity (Level 3).',
           fix: 'Re-code to CPT 99213 ($165). Savings: $220.00',
           line: 1,
-          potentialRecovery: 220.00
+          potentialRecovery: 220.00,
+          ruleCited: 'AMA CPT Guidelines: Level 5 vs Level 3 Medical Decision Making'
         },
         {
           id: 's2',
@@ -41,7 +42,8 @@ export function AuditPortal() {
           description: 'Identical charge for Lumbar MRI detected from both the surgical center and the imaging hub.',
           fix: 'Reject duplicate $1,250.00 imaging fee.',
           line: 14,
-          potentialRecovery: 1250.00
+          potentialRecovery: 1250.00,
+          ruleCited: 'OCG § 8.4: Prohibition of Duplicate Diagnostic Billing'
         },
         {
           id: 's3',
@@ -50,7 +52,8 @@ export function AuditPortal() {
           description: 'Surgical tray supplies billed separately from the primary procedure fee.',
           fix: 'Deduct $450.00 unbundled supply cost.',
           line: 22,
-          potentialRecovery: 450.00
+          potentialRecovery: 450.00,
+          ruleCited: 'CMS NCCI Manual: Surgical Procedure Bundling Rules'
         },
         {
           id: 's4',
@@ -59,7 +62,8 @@ export function AuditPortal() {
           description: 'Charge for Assistant Surgeon ($1,800) not pre-authorized or medically necessary for this procedure.',
           fix: 'Full rejection of assistant surgeon fee.',
           line: 5,
-          potentialRecovery: 1800.00
+          potentialRecovery: 1800.00,
+          ruleCited: 'OCG § 3.2: Assistant Surgeon Pre-Authorization Requirements'
         },
         {
           id: 's5',
@@ -68,7 +72,8 @@ export function AuditPortal() {
           description: 'Charge for 60 minutes of PT manual therapy; records show patient was in the facility for only 30 minutes.',
           fix: 'Apply 50% haircut to therapy time entries.',
           line: 31,
-          potentialRecovery: 450.00
+          potentialRecovery: 450.00,
+          ruleCited: 'Medicare Benefit Policy Manual Ch. 15 § 220.3'
         },
         {
           id: 's6',
@@ -77,7 +82,8 @@ export function AuditPortal() {
           description: 'Medical record retrieval fee ($75) exceeds state-mandated maximum for non-litigation requests.',
           fix: 'Cap at $25.00 statutory limit.',
           line: 45,
-          potentialRecovery: 50.00
+          potentialRecovery: 50.00,
+          ruleCited: 'FL Stat. § 456.057: Limits on Medical Record Copying Fees'
         }
       ];
 
@@ -107,19 +113,21 @@ export function AuditPortal() {
             description: 'Line item rate ($450/hr) exceeds approved firm master agreement rate ($400/hr).',
             fix: 'Revert to approved rate or request rate change documentation.',
             line: 42,
-            potentialRecovery: 1250.00
+            potentialRecovery: 1250.00,
+            ruleCited: 'MSA § 2.1: Negotiated Rate Lock Provision'
           },
           {
             id: 'v2',
             type: 'warning',
-            title: 'Vague Task Description',
-            description: 'Task entry "Review documents" lacks specificity required by UTBMS standards.',
-            fix: 'Request detailed task breakdown or apply 10% administrative haircut.',
+            title: 'Task Inflation (Email)',
+            description: 'Routine email response billed at 1.0 hour. Benchmark for administrative email correspondence is 0.1 - 0.2 hours.',
+            fix: 'Apply 0.2hr benchmark cap. Savings: $400.00',
             line: 115,
-            potentialRecovery: 900.00
+            potentialRecovery: 400.00,
+            ruleCited: 'OCG § 5.3: Efficiency Benchmarking for Routine Correspondence'
           }
         ];
-        setLeakage(prev => prev + 2150.00);
+        setLeakage(prev => prev + 1650.00);
       } else {
         mockViolations = [
           {
@@ -129,7 +137,8 @@ export function AuditPortal() {
             description: 'Level 4 office visit charged ($285) despite patient record supporting only Level 3 criteria.',
             fix: 'Reduce to CPT 99213 ($165) per Medicare baseline rates.',
             line: 12,
-            potentialRecovery: 120.00
+            potentialRecovery: 120.00,
+            ruleCited: 'CPT § 99213: Medical Decision Making Level Benchmarks'
           },
           {
             id: 'm2',
@@ -138,7 +147,8 @@ export function AuditPortal() {
             description: 'Individual charges for "Bandage Application" and "Wound Cleaning" should be bundled under global trauma fee.',
             fix: 'Apply $85.00 unbundling deduction.',
             line: 8,
-            potentialRecovery: 85.00
+            potentialRecovery: 85.00,
+            ruleCited: 'CCI § 4.1: Global Procedure Bundling Guidelines'
           },
           {
             id: 'm3',
@@ -147,7 +157,8 @@ export function AuditPortal() {
             description: 'Provider #842 submitted identical charges for X-Ray services already billed on 01/12/2026.',
             fix: 'Full $450.00 duplicate line-item rejection.',
             line: 24,
-            potentialRecovery: 450.00
+            potentialRecovery: 450.00,
+            ruleCited: 'OCG § 8.4: Prohibition of Duplicate Charge Submission'
           }
         ];
         setMedicalSpecials(prev => prev + 8450.50);

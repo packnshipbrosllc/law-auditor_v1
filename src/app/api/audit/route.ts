@@ -30,6 +30,16 @@ function scrubPII(text: string): string {
   return scrubbed;
 }
 
+/**
+ * LEDES 1998B Parser (Simulated)
+ * Extracts structured data from industry-standard legal billing files (.txt, .csv)
+ */
+function parseLEDES(content: string) {
+  // In production, this would use a robust parser for the pipe-delimited LEDES 1998B format
+  console.log('[Institutional Engine] Parsing LEDES 1998B structure detected.');
+  return { format: 'LEDES_1998B', entriesCount: 142 };
+}
+
 // COMPLIANCE: Ephemeral processing only. No document content persisted per CCPA 2026 / AB 853.
 export async function POST(request: Request) {
   try {
@@ -42,38 +52,64 @@ export async function POST(request: Request) {
 
     console.log(`[API/Audit] Security: Scrubbing PII from ${files.length} documents.`);
     
-    // Simulation: In production, we extract text and call scrubPII(text)
-    const piiScrubbingActive = true;
-    
-    if (piiScrubbingActive) {
-      console.log('[API/Audit] PII Scrubbing Engine: SUCCESS (SSN, Phone, Names masked)');
-    }
+    // LEDES detection logic
+    files.forEach(file => {
+      if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+        parseLEDES('mock_content');
+      }
+    });
 
     const mockViolations = [
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        type: 'critical',
+        title: 'Institutional Exclusion: Summer Associate Time',
+        description: '0.8 hours billed for research by 1st-year associate (ID: [ASSOCIATE_ID]). Institutional guidelines exclude payment for entry-level training.',
+        fix: 'Deduct full line item. Savings: $320.00',
+        line: 142,
+        potentialRecovery: 320.00,
+        ruleCited: 'OCG § 4.2: Professional Development & Training Exclusions'
+      },
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        type: 'critical',
+        title: 'Task Inflation Detected',
+        description: 'Routine email response billed at 1.0 hour. Industry benchmark for this activity is 0.1 - 0.2 hours.',
+        fix: 'Apply haircut to 0.2 hours. Savings: $400.00',
+        line: 88,
+        potentialRecovery: 400.00,
+        ruleCited: 'ABA Model Rule 1.5: Reasonable Fees & Activity Benchmarking'
+      },
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        type: 'warning',
+        title: 'Inter-office Conferencing',
+        description: 'Three partners (ID: [P1, P2, P3]) billed for the same 0.5hr internal call. Institutional guidelines allow only one attendee to bill for internal syncs.',
+        fix: 'Deduct time for junior partners. Savings: $650.00',
+        line: 215,
+        potentialRecovery: 650.00,
+        ruleCited: 'OCG § 7.1: Internal Communication & Meeting Efficiency'
+      },
       {
         id: Math.random().toString(36).substr(2, 9),
         type: 'critical',
         title: 'Unauthorized Rate Increase',
         description: 'Line item rate exceeds approved firm master agreement rate.',
         fix: 'Revert to approved rate.',
-        line: Math.floor(Math.random() * 500),
-        potentialRecovery: 1850.00
-      },
-      {
-        id: Math.random().toString(36).substr(2, 9),
-        type: 'warning',
-        title: 'Vague Task Description',
-        description: 'Task entry lacks specificity required by UTBMS standards.',
-        fix: 'Request detailed breakdown.',
-        line: Math.floor(Math.random() * 500),
-        potentialRecovery: 275.35
+        line: 42,
+        potentialRecovery: 1850.00,
+        ruleCited: 'Master Service Agreement § 2.1: Rate Lock Provision'
       }
     ];
 
     /**
-     * CLAUDE SYSTEM PROMPT INSTRUCTION:
-     * "For every flag identified, you MUST provide a specific 'Potential Recovery' dollar amount 
-     * based on the discrepancy between the billed amount and the allowed/compliant amount."
+     * CLAUDE SYSTEM PROMPT INSTRUCTIONS (Institutional Enhancement):
+     * 1. CROSS-REFERENCE: Check all entries against 'Outside Counsel Guidelines' (OCG).
+     * 2. EXCLUSIONS: Flag 'Summer Associate' time as non-billable training.
+     * 3. BENCHMARKING: Flag 'Task Inflation' (e.g., 1.0 hr for an email).
+     * 4. EFFICIENCY: Flag 'Inter-office conferencing' (multiple partners on one internal call).
+     * 5. RECOVERY: Provide a 'Potential Recovery' amount for every flag.
+     * 6. JUSTIFICATION: You MUST cite the specific Rule, Guideline, or OCG § violated in the 'ruleCited' field.
      */
 
     return NextResponse.json({
