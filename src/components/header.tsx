@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
 import { getStateName } from "@/lib/utils";
 import Image from "next/image";
+import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export function Header() {
   const [activeStateCode, setActiveStateCode] = useState<string>('CA');
@@ -57,11 +58,30 @@ export function Header() {
           <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
         </div>
         <div className="flex items-center gap-4">
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button variant="outline" className="border-gold/30 text-gold hover:bg-gold/10 px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none">
+                Sign In
+              </Button>
+            </SignInButton>
+          </SignedOut>
           <a href="#demo">
             <Button className="bg-gold hover:bg-gold-light text-[#020617] px-5 h-9 text-xs font-bold uppercase tracking-widest rounded-none border border-gold-light/20 shadow-none">
               Request Analysis
             </Button>
           </a>
+          <SignedIn>
+            <div className="flex items-center gap-4 ml-2 pl-4 border-l border-slate-800">
+              <UserButton 
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: "h-9 w-9 rounded-none border border-gold/30 shadow-[0_0_10px_rgba(212,175,55,0.1)]",
+                    userButtonTrigger: "rounded-none",
+                  }
+                }}
+              />
+            </div>
+          </SignedIn>
         </div>
       </div>
     </nav>

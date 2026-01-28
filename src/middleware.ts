@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { geolocation } from '@vercel/functions';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export function middleware(request: NextRequest) {
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/api/audit(.*)',
+]);
+
+export default clerkMiddleware((auth, request) => {
+  if (isProtectedRoute(request)) auth().protect();
+
   // Supported states
   const supportedStates = ['TX', 'CA', 'FL'];
 
@@ -50,14 +58,13 @@ export function middleware(request: NextRequest) {
   });
 
   return response;
-}
+});
 
 // Ensure middleware runs on all relevant routes
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - icon.png (favicon file)
