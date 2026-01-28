@@ -130,11 +130,13 @@ Example output:
     }
 
     const totalLeakage = violations.reduce((sum: number, v: any) => sum + (v.potentialRecovery || 0), 0);
+    const successFee = totalLeakage * 0.20;
 
     return NextResponse.json({
       message: 'Analysis complete',
       violations,
       leakage: totalLeakage,
+      successFee: successFee,
       securityStatus: 'PII_SCRUBBED',
       timestamp: new Date().toISOString()
     });

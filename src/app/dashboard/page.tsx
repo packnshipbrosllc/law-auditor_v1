@@ -23,7 +23,9 @@ export default function DashboardPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [violations, setViolations] = useState<Violation[]>([]);
   const [leakage, setLeakage] = useState(0);
+  const [successFee, setSuccessFee] = useState(0);
   const [hasResults, setHasResults] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -50,7 +52,9 @@ export default function DashboardPage() {
       const data = await response.json();
       setViolations(data.violations);
       setLeakage(data.leakage);
+      setSuccessFee(data.successFee);
       setHasResults(true);
+      setIsPaid(false); // Reset paid status for new analysis
     } catch (error) {
       console.error('Audit error:', error);
       alert('Failed to process documents. Please try again.');
@@ -83,14 +87,27 @@ export default function DashboardPage() {
             </div>
             
             {hasResults && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-emerald-500/10 border border-emerald-500/20 p-6 flex flex-col items-end"
-              >
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Total Estimated Savings</span>
-                <span className="text-4xl font-mono font-medium text-emerald-400">${leakage.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </motion.div>
+              <div className="flex gap-4">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-emerald-500/10 border border-emerald-500/20 p-6 flex flex-col items-end"
+                >
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Total Money Found</span>
+                  <span className="text-4xl font-mono font-medium text-emerald-400">${leakage.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </motion.div>
+                {!isPaid && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-gold/10 border border-gold/20 p-6 flex flex-col items-end"
+                  >
+                    <span className="text-[10px] font-black text-gold uppercase tracking-[0.2em] mb-1">Success Fee (20%)</span>
+                    <span className="text-4xl font-mono font-medium text-gold-light">${successFee.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  </motion.div>
+                )}
+              </div>
             )}
           </div>
 
@@ -160,7 +177,22 @@ export default function DashboardPage() {
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{violations.length} DISCREPANCIES IDENTIFIED</span>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto relative">
+                      {!isPaid && (
+                        <div className="absolute inset-0 z-20 backdrop-blur-md bg-[#020617]/60 flex flex-col items-center justify-center border border-slate-800 p-12 text-center">
+                          <Lock className="w-12 h-12 text-gold mb-6" />
+                          <h3 className="text-xl font-black uppercase tracking-widest text-white mb-2">Detailed Analysis Locked</h3>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-8 max-w-sm mx-auto leading-relaxed">
+                            A 20% software success fee is required to unlock the full recovery report and line-item justifications.
+                          </p>
+                          <Button 
+                            onClick={() => setIsPaid(true)} // Simulation: In production, trigger Stripe/Payment
+                            className="bg-gold hover:bg-gold-light text-[#020617] px-12 h-14 text-xs font-black uppercase tracking-[0.2em] rounded-none shadow-2xl shadow-gold/20"
+                          >
+                            Pay ${successFee.toLocaleString()} to Unlock Report
+                          </Button>
+                        </div>
+                      )}
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="border-b border-slate-800 text-left">
