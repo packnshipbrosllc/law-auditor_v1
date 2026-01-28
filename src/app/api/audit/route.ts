@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
+import { auth } from '@clerk/nextjs/server';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -28,6 +31,11 @@ function scrubPII(text: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const files = formData.getAll('files') as File[];
 
@@ -41,6 +49,7 @@ export async function POST(req: NextRequest) {
       const buffer = Buffer.from(await file.arrayBuffer());
       
       if (file.type === 'application/pdf') {
+        const pdf = require('pdf-parse');
         const data = await pdf(buffer);
         combinedText += `\n--- File: ${file.name} ---\n${data.text}`;
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
@@ -64,6 +73,7 @@ export async function POST(req: NextRequest) {
     const msg = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20240620",
       max_tokens: 4096,
+      temperature: 0, // Deterministic results
       system: `You are a Senior Legal Auditor. Your task is to audit legal or medical bills for compliance with ABA Model Rule 1.5 and standard Outside Counsel Guidelines (OCG).
 Identify violations such as:
 1. Block Billing (multiple tasks in one entry)
