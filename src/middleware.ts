@@ -8,8 +8,8 @@ const isProtectedRoute = createRouteMatcher([
   '/api/audit(.*)',
 ]);
 
-export default clerkMiddleware((auth, request) => {
-  if (isProtectedRoute(request)) auth().protect();
+export default clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) await auth.protect();
 
   // Supported states
   const supportedStates = ['TX', 'CA', 'FL'];
