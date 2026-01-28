@@ -46,11 +46,11 @@ export function LeakageMeter({ amount, invoiceCount, label = "At-Risk Revenue" }
           </div>
 
           <div className="mb-8">
-            <div className="text-4xl font-mono font-medium text-white tabular-nums tracking-tighter">
+            <div className="text-4xl font-mono font-medium text-emerald-400 tabular-nums tracking-tighter">
               {formattedAmount}
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                 Calculated Leakage
               </span>

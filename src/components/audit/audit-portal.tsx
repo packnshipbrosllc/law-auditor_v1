@@ -31,7 +31,8 @@ export function AuditPortal() {
           title: 'Upcoded Evaluation (CPT 99215)',
           description: 'Provider charged for Comprehensive Complexity ($385) while patient records indicate Low Complexity (Level 3).',
           fix: 'Re-code to CPT 99213 ($165). Savings: $220.00',
-          line: 1
+          line: 1,
+          potentialRecovery: 220.00
         },
         {
           id: 's2',
@@ -39,7 +40,8 @@ export function AuditPortal() {
           title: 'Duplicate MRI Charge',
           description: 'Identical charge for Lumbar MRI detected from both the surgical center and the imaging hub.',
           fix: 'Reject duplicate $1,250.00 imaging fee.',
-          line: 14
+          line: 14,
+          potentialRecovery: 1250.00
         },
         {
           id: 's3',
@@ -47,7 +49,8 @@ export function AuditPortal() {
           title: 'Unbundled Surgical Tray',
           description: 'Surgical tray supplies billed separately from the primary procedure fee.',
           fix: 'Deduct $450.00 unbundled supply cost.',
-          line: 22
+          line: 22,
+          potentialRecovery: 450.00
         },
         {
           id: 's4',
@@ -55,7 +58,8 @@ export function AuditPortal() {
           title: 'Unauthorized Assistant Surgeon',
           description: 'Charge for Assistant Surgeon ($1,800) not pre-authorized or medically necessary for this procedure.',
           fix: 'Full rejection of assistant surgeon fee.',
-          line: 5
+          line: 5,
+          potentialRecovery: 1800.00
         },
         {
           id: 's5',
@@ -63,7 +67,8 @@ export function AuditPortal() {
           title: 'Phantom Physical Therapy',
           description: 'Charge for 60 minutes of PT manual therapy; records show patient was in the facility for only 30 minutes.',
           fix: 'Apply 50% haircut to therapy time entries.',
-          line: 31
+          line: 31,
+          potentialRecovery: 450.00
         },
         {
           id: 's6',
@@ -71,7 +76,8 @@ export function AuditPortal() {
           title: 'Administrative Surcharge',
           description: 'Medical record retrieval fee ($75) exceeds state-mandated maximum for non-litigation requests.',
           fix: 'Cap at $25.00 statutory limit.',
-          line: 45
+          line: 45,
+          potentialRecovery: 50.00
         }
       ];
 
@@ -100,7 +106,8 @@ export function AuditPortal() {
             title: 'Unauthorized Rate Increase',
             description: 'Line item rate ($450/hr) exceeds approved firm master agreement rate ($400/hr).',
             fix: 'Revert to approved rate or request rate change documentation.',
-            line: 42
+            line: 42,
+            potentialRecovery: 1250.00
           },
           {
             id: 'v2',
@@ -108,7 +115,8 @@ export function AuditPortal() {
             title: 'Vague Task Description',
             description: 'Task entry "Review documents" lacks specificity required by UTBMS standards.',
             fix: 'Request detailed task breakdown or apply 10% administrative haircut.',
-            line: 115
+            line: 115,
+            potentialRecovery: 900.00
           }
         ];
         setLeakage(prev => prev + 2150.00);
@@ -120,7 +128,8 @@ export function AuditPortal() {
             title: 'Diagnostic Upcoding (CPT 99214)',
             description: 'Level 4 office visit charged ($285) despite patient record supporting only Level 3 criteria.',
             fix: 'Reduce to CPT 99213 ($165) per Medicare baseline rates.',
-            line: 12
+            line: 12,
+            potentialRecovery: 120.00
           },
           {
             id: 'm2',
@@ -128,7 +137,8 @@ export function AuditPortal() {
             title: 'Unbundled Service Detection',
             description: 'Individual charges for "Bandage Application" and "Wound Cleaning" should be bundled under global trauma fee.',
             fix: 'Apply $85.00 unbundling deduction.',
-            line: 8
+            line: 8,
+            potentialRecovery: 85.00
           },
           {
             id: 'm3',
@@ -136,11 +146,12 @@ export function AuditPortal() {
             title: 'Duplicate Provider Billing',
             description: 'Provider #842 submitted identical charges for X-Ray services already billed on 01/12/2026.',
             fix: 'Full $450.00 duplicate line-item rejection.',
-            line: 24
+            line: 24,
+            potentialRecovery: 450.00
           }
         ];
         setMedicalSpecials(prev => prev + 8450.50);
-        setLeakage(prev => prev + 700.00); // Amount saved in PI mode
+        setLeakage(prev => prev + 655.00); // Amount saved in PI mode (sum of mockViolations)
       }
 
       setViolations(prev => [...mockViolations, ...prev]);
@@ -256,6 +267,39 @@ export function AuditPortal() {
                 </div>
               </div>
 
+              {/* Recovery Dashboard */}
+              <AnimatePresence>
+                {violations.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4"
+                  >
+                    <div className="bg-slate-50 border border-slate-200 p-6 rounded-none relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-slate-200" />
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Audited Amount</div>
+                      <div className="text-2xl font-mono font-medium text-slate-900">
+                        ${(mode === 'corporate' ? leakage * 4.5 : medicalSpecials).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-none relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
+                      <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Total Leakage Found</div>
+                      <div className="text-2xl font-mono font-medium text-emerald-600">
+                        ${leakage.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-none relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400 opacity-50" />
+                      <div className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-2">LawAuditor Success Fee (15%)</div>
+                      <div className="text-2xl font-mono font-medium text-emerald-500">
+                        ${(leakage * 0.15).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="min-h-[400px]">
                 <AnimatePresence mode="popLayout">
                   {violations.length > 0 ? (
@@ -301,6 +345,16 @@ export function AuditPortal() {
           </aside>
         </div>
       </main>
+
+      {/* Compliance Footer */}
+      <footer className="container mx-auto px-6 pb-12">
+        <div className="pt-8 border-t border-slate-100">
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-relaxed max-w-4xl">
+            LawAuditor Analysis Report // Success fee is a software licensing cost based on data-processing volume and accuracy benchmarks. 
+            All findings are generated by automated technical analysis and require licensed professional review.
+          </p>
+        </div>
+      </footer>
 
       <div className="fixed bottom-8 left-8 z-50">
         <div className="flex items-center gap-3 bg-white border border-slate-200 p-3 shadow-2xl rounded-none">

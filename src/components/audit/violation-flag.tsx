@@ -13,6 +13,7 @@ export interface Violation {
   description: string;
   fix: string;
   line?: number;
+  potentialRecovery: number;
 }
 
 interface ViolationFlagProps {
@@ -63,6 +64,10 @@ export function ViolationFlag({ violation, onFix }: ViolationFlagProps) {
             >
               Suggested Fix
             </Button>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Potential Recovery:</span>
+              <span className="text-[10px] font-mono font-black text-emerald-500">${violation.potentialRecovery.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       </div>

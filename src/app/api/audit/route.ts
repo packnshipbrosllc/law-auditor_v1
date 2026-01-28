@@ -56,7 +56,8 @@ export async function POST(request: Request) {
         title: 'Unauthorized Rate Increase',
         description: 'Line item rate exceeds approved firm master agreement rate.',
         fix: 'Revert to approved rate.',
-        line: Math.floor(Math.random() * 500)
+        line: Math.floor(Math.random() * 500),
+        potentialRecovery: 1850.00
       },
       {
         id: Math.random().toString(36).substr(2, 9),
@@ -64,9 +65,16 @@ export async function POST(request: Request) {
         title: 'Vague Task Description',
         description: 'Task entry lacks specificity required by UTBMS standards.',
         fix: 'Request detailed breakdown.',
-        line: Math.floor(Math.random() * 500)
+        line: Math.floor(Math.random() * 500),
+        potentialRecovery: 275.35
       }
     ];
+
+    /**
+     * CLAUDE SYSTEM PROMPT INSTRUCTION:
+     * "For every flag identified, you MUST provide a specific 'Potential Recovery' dollar amount 
+     * based on the discrepancy between the billed amount and the allowed/compliant amount."
+     */
 
     return NextResponse.json({
       message: 'Analysis complete',
