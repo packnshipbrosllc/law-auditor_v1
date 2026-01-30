@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
 import { auth } from '@clerk/nextjs/server';
 import { createRequire } from 'module';
+import { saveAudit, createAuditsTable } from '@/lib/db';
 
 const require = createRequire(import.meta.url);
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+// Dynamic import for Anthropic SDK to avoid build-time initialization errors
+async function getAnthropicClient() {
+  const Anthropic = (await import('@anthropic-ai/sdk')).default;
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+  });
+}
 
 /**
  * PII Masking Engine (regex-based)
@@ -70,6 +74,7 @@ export async function POST(req: NextRequest) {
     const scrubbedText = scrubPII(combinedText);
 
     // Call Claude 3.5 Sonnet
+    const anthropic = await getAnthropicClient();
     const msg = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20240620",
       max_tokens: 4096,
@@ -132,14 +137,32 @@ Example output:
     const totalLeakage = violations.reduce((sum: number, v: any) => sum + (v.potentialRecovery || 0), 0);
     const successFee = totalLeakage * 0.20;
 
-    return NextResponse.json({
-      message: 'Analysis complete',
-      violations,
-      leakage: totalLeakage,
-      successFee: successFee,
-      securityStatus: 'PII_SCRUBBED',
-      timestamp: new Date().toISOString()
-    });
+    // Ensure table exists and save audit results
+    try {
+      await createAuditsTable();
+      const auditId = await saveAudit(userId, totalLeakage, successFee);
+      
+      return NextResponse.json({
+        message: 'Analysis complete',
+        auditId,
+        violations,
+        leakage: totalLeakage,
+        successFee: successFee,
+        securityStatus: 'PII_SCRUBBED',
+        timestamp: new Date().toISOString()
+      });
+    } catch (dbError) {
+      console.error('[API/Audit] Database Error:', dbError);
+      // Fallback for demo if DB is not configured yet
+      return NextResponse.json({
+        message: 'Analysis complete (DB Fallback)',
+        violations,
+        leakage: totalLeakage,
+        successFee: successFee,
+        securityStatus: 'PII_SCRUBBED',
+        timestamp: new Date().toISOString()
+      });
+    }
 
   } catch (error) {
     console.error('[API/Audit] Error:', error);
