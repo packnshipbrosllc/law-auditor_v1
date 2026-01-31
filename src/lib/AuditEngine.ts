@@ -4,6 +4,65 @@
  * with full ABA Model Rule 1.5 and State Bar compliance citations.
  */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE-SPECIFIC LEGAL CITATIONS
+// Localized compliance for Texas, Florida, and California
+// ═══════════════════════════════════════════════════════════════════════════
+export const STATE_CITATIONS = {
+  TX: {
+    name: 'Texas',
+    primary: 'Texas Disciplinary Rule 1.04',
+    description: 'Prohibits "unconscionable fees." Fees must be reasonable as determined by what a competent lawyer would charge.',
+    specificRules: [
+      'TX Disciplinary Rule 1.04(a): Fee must not be unconscionable',
+      'TX Disciplinary Rule 1.04(b): Factors for reasonableness include time, complexity, and skill required',
+      'TX Ethics Op. 611: Block billing may violate transparency requirements',
+    ],
+  },
+  FL: {
+    name: 'Florida',
+    primary: 'Florida Bar Rule 4-1.5',
+    description: 'Limits referral fees to 25% in PI cases. Requires clear and timely fee disclosure.',
+    specificRules: [
+      'FL Bar Rule 4-1.5(a): Fees must be reasonable',
+      'FL Bar Rule 4-1.5(f): Referral splits limited to 25% in PI matters',
+      'FL Bar Rule 4-1.5(e): Written fee agreements required for contingency cases',
+    ],
+  },
+  CA: {
+    name: 'California',
+    primary: 'Bus. & Prof. Code § 6148',
+    description: 'Requires written contracts for fees exceeding $1,000. Mandates detailed billing statements.',
+    specificRules: [
+      'CA Bus. & Prof. Code § 6148: Written fee agreement required for fees >$1,000',
+      'CA State Bar Formal Op. 2007-168: Block billing may be unethical',
+      'CA Rules of Prof. Conduct Rule 1.5: Fees must be reasonable',
+    ],
+  },
+};
+
+export type StateCode = 'TX' | 'FL' | 'CA';
+
+/**
+ * Get state-specific legal citations for audit reports
+ */
+export function getStateCitations(stateCode: StateCode = 'CA') {
+  return STATE_CITATIONS[stateCode] || STATE_CITATIONS.CA;
+}
+
+/**
+ * Enhance violation with state-specific citation
+ */
+export function addStateCitation(violation: AuditFlag, stateCode: StateCode = 'CA'): AuditFlag {
+  const stateCitation = STATE_CITATIONS[stateCode];
+  const stateRule = stateCitation.specificRules[0]; // Primary rule
+  
+  return {
+    ...violation,
+    legalCitation: `${violation.legalCitation} | ${stateRule}`,
+  };
+}
+
 export interface LedesEntry {
   id: string;
   invoiceDate: string;

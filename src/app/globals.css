@@ -133,5 +133,21 @@
   body {
     @apply bg-background text-foreground relative;
   }
-  /* body::before removed temporarily for debugging */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLL BEHAVIOR & HEADER FIXES
+   Prevents "page jump" during login and anchor navigation
+═══════════════════════════════════════════════════════════════════════════ */
+html {
+  scroll-padding-top: 80px;
+  scroll-behavior: smooth;
+}
+
+#header-container,
+nav[class*="fixed"],
+nav[class*="sticky"] {
+  min-height: 64px;
+  /* Prevent Layout Shift when Clerk loads */
+  contain: layout;
 }

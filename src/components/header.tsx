@@ -9,22 +9,55 @@ import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export function Header() {
   const [activeStateCode, setActiveStateCode] = useState<string>('CA');
+  const [isDetecting, setIsDetecting] = useState(true);
 
   useEffect(() => {
+    // Check cookie first
     const checkCookie = () => {
       const cookieValue = document.cookie
         .split('; ')
         .find((row) => row.startsWith('user-state='))
         ?.split('=')[1];
-      if (cookieValue && cookieValue.toUpperCase() !== activeStateCode) {
+      if (cookieValue && ['CA', 'TX', 'FL'].includes(cookieValue.toUpperCase())) {
         setActiveStateCode(cookieValue.toUpperCase());
+        setIsDetecting(false);
+        return true;
+      }
+      return false;
+    };
+
+    // IP-based geolocation fallback (no popup required)
+    const applyLocalCompliance = async () => {
+      // Skip if already detected from cookie
+      if (checkCookie()) return;
+
+      try {
+        const response = await fetch('https://ipapi.co/json/', { 
+          signal: AbortSignal.timeout(3000) // 3s timeout
+        });
+        const data = await response.json();
+        const state = data.region_code;
+
+        if (['TX', 'FL', 'CA'].includes(state)) {
+          setActiveStateCode(state);
+          // Set cookie for future visits
+          document.cookie = `user-state=${state};path=/;max-age=86400`;
+          // Dispatch event for other components
+          window.dispatchEvent(new CustomEvent('state-detected', { detail: state }));
+        }
+      } catch (err) {
+        // Silent fail - default to CA
+      } finally {
+        setIsDetecting(false);
       }
     };
 
-    checkCookie();
-    const interval = setInterval(checkCookie, 1000);
+    applyLocalCompliance();
+
+    // Continue checking cookie for manual overrides
+    const interval = setInterval(checkCookie, 2000);
     return () => clearInterval(interval);
-  }, [activeStateCode]);
+  }, []);
 
   return (
     <nav className="absolute md:fixed top-0 md:top-8 w-full z-[150] border-b border-slate-800/50 bg-[#020617]/70 backdrop-blur-xl">
