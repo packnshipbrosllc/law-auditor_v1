@@ -91,13 +91,28 @@ class ApolloEnricher:
     """
     Apollo.io API client for lead enrichment.
     
+    Uses /v1/people/match for fast, accurate contact matching.
+    
     API Docs: https://apolloio.github.io/apollo-api-docs/
     
     Pricing: Apollo has a free tier with 50 credits/month.
-    Each people search costs ~1 credit.
+    Each people/match call costs ~1 credit.
     """
     
     BASE_URL = "https://api.apollo.io/v1"
+    
+    # Priority titles for financial decision-makers
+    DECISION_MAKER_TITLES = [
+        "CFO", "Chief Financial Officer",
+        "Controller", "Comptroller", 
+        "Owner", "Co-Owner",
+        "CEO", "Chief Executive Officer",
+        "President",
+        "Managing Partner", "Managing Director",
+        "Founder", "Co-Founder",
+        "VP Finance", "Vice President Finance",
+        "Director of Finance"
+    ]
     
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -107,58 +122,55 @@ class ApolloEnricher:
             'Cache-Control': 'no-cache'
         })
     
-    def search_organization(self, company_name: str, city: str = None) -> Optional[Dict]:
+    def enrich_whale(self, business_name: str, city: str = None) -> Optional[Dict]:
         """
-        Search for an organization by name.
-        Returns organization ID for people search.
+        Fast enrichment using /v1/people/match endpoint.
+        Searches for CFO, Controller, or Owner at the business.
+        Returns: { name, title, email, phone, linkedin }
         """
         try:
-            # Clean company name for search
-            clean_name = self._clean_company_name(company_name)
+            clean_name = self._clean_company_name(business_name)
             
+            # Primary method: people/match (fastest, most accurate)
             payload = {
                 "api_key": self.api_key,
-                "q_organization_name": clean_name,
-                "per_page": 1
+                "organization_name": clean_name,
+                "titles": self.DECISION_MAKER_TITLES
             }
             
-            if city:
-                payload["organization_locations"] = [city.title()]
-            
             response = self.session.post(
-                f"{self.BASE_URL}/mixed_companies/search",
+                f"{self.BASE_URL}/people/match",
                 json=payload
             )
             
             if response.status_code == 200:
                 data = response.json()
-                if data.get('organizations') and len(data['organizations']) > 0:
-                    return data['organizations'][0]
+                person = data.get('person')
+                
+                if person:
+                    return self._extract_contact(person)
             
-            return None
+            # Fallback: mixed_people/search for broader results
+            return self._search_people_fallback(clean_name, city)
             
         except Exception as e:
-            print(f"      ⚠️ Org search error: {e}")
+            print(f" ⚠️ {e}")
             return None
     
-    def search_people(self, company_name: str, city: str = None) -> Optional[Dict]:
+    def _search_people_fallback(self, company_name: str, city: str = None) -> Optional[Dict]:
         """
-        Search for decision-makers at a company.
-        Returns best matching contact with title, email, phone.
+        Fallback search using mixed_people/search endpoint.
         """
         try:
-            # Clean company name
-            clean_name = self._clean_company_name(company_name)
-            
             payload = {
                 "api_key": self.api_key,
-                "q_organization_name": clean_name,
-                "person_titles": TARGET_TITLES,
-                "per_page": 5  # Get top 5, we'll pick the best
+                "q_organization_name": company_name,
+                "person_titles": self.DECISION_MAKER_TITLES,
+                "per_page": 5
             }
             
             if city:
-                payload["person_locations"] = [city.title()]
+                payload["person_locations"] = [city.title() + ", California"]
             
             response = self.session.post(
                 f"{self.BASE_URL}/mixed_people/search",
@@ -170,38 +182,62 @@ class ApolloEnricher:
                 people = data.get('people', [])
                 
                 if people:
-                    # Score and rank by title priority
                     return self._pick_best_contact(people)
             
             return None
             
-        except Exception as e:
-            print(f"      ⚠️ People search error: {e}")
+        except Exception:
             return None
+    
+    def _extract_contact(self, person: Dict) -> Dict:
+        """Extract contact info from Apollo person object."""
+        # Get phone - try multiple fields
+        phone = None
+        if person.get('phone_numbers'):
+            phones = person['phone_numbers']
+            # Prefer direct/mobile over HQ
+            for p in phones:
+                if p.get('type') in ['direct', 'mobile']:
+                    phone = p.get('sanitized_number') or p.get('number')
+                    break
+            if not phone and phones:
+                phone = phones[0].get('sanitized_number') or phones[0].get('number')
+        
+        # Also check direct_phone field
+        if not phone:
+            phone = person.get('direct_phone') or person.get('mobile_phone')
+        
+        return {
+            'name': person.get('name'),
+            'title': person.get('title'),
+            'email': person.get('email'),
+            'phone': phone,
+            'linkedin': person.get('linkedin_url'),
+            'company_match': person.get('organization', {}).get('name') if person.get('organization') else None
+        }
     
     def _clean_company_name(self, name: str) -> str:
         """Remove common suffixes for better matching."""
         import re
-        # Remove entity suffixes
         cleaned = re.sub(r'\s+(INC\.?|LLC|CORP\.?|LLP|L\.P\.|LP|CORPORATION|COMPANY|CO\.)$', '', name, flags=re.IGNORECASE)
-        # Remove extra whitespace
         cleaned = ' '.join(cleaned.split())
         return cleaned
     
     def _pick_best_contact(self, people: List[Dict]) -> Optional[Dict]:
         """
         Rank contacts by title priority.
-        CEO > CFO > Owner > President > Controller > Others
+        CFO > Controller > Owner > CEO > President > Others
         """
         title_priority = {
-            'ceo': 1, 'chief executive': 1,
-            'cfo': 2, 'chief financial': 2,
+            'cfo': 1, 'chief financial': 1,
+            'controller': 2, 'comptroller': 2,
             'owner': 3, 'co-owner': 3,
-            'president': 4,
-            'controller': 5, 'comptroller': 5,
-            'founder': 6, 'co-founder': 6,
-            'managing partner': 7, 'managing director': 7,
-            'general counsel': 8, 'chief legal': 8
+            'ceo': 4, 'chief executive': 4,
+            'president': 5,
+            'vp finance': 6, 'vice president finance': 6,
+            'director of finance': 7,
+            'founder': 8, 'co-founder': 8,
+            'managing partner': 9, 'managing director': 9
         }
         
         def score_contact(person):
@@ -209,21 +245,12 @@ class ApolloEnricher:
             for keyword, priority in title_priority.items():
                 if keyword in title:
                     return priority
-            return 100  # Low priority for unknown titles
+            return 100
         
-        # Sort by priority
         sorted_people = sorted(people, key=score_contact)
         
         if sorted_people:
-            best = sorted_people[0]
-            return {
-                'name': best.get('name'),
-                'title': best.get('title'),
-                'email': best.get('email'),
-                'phone': best.get('phone_numbers', [{}])[0].get('sanitized_number') if best.get('phone_numbers') else None,
-                'linkedin': best.get('linkedin_url'),
-                'company_match': best.get('organization', {}).get('name')
-            }
+            return self._extract_contact(sorted_people[0])
         
         return None
 
@@ -397,9 +424,11 @@ def filter_whales(df: pd.DataFrame, limit: int = None) -> pd.DataFrame:
 def enrich_leads(whales: pd.DataFrame, owner_col: str, city_col: str, 
                  apollo_key: str = None, hunter_key: str = None) -> pd.DataFrame:
     """
-    Enrich whale leads with contact information.
+    Enrich whale leads with CFO/Controller/Owner contact information.
+    Uses Apollo.io /v1/people/match for fast, accurate results.
     """
-    print("\n🔎 Enriching leads with contact data...")
+    print("\n🔎 Enriching leads with decision-maker contacts...")
+    print("   Target Titles: CFO, Controller, Owner, CEO, President")
     
     # Initialize enrichers
     apollo = ApolloEnricher(apollo_key) if apollo_key else None
@@ -415,32 +444,42 @@ def enrich_leads(whales: pd.DataFrame, owner_col: str, city_col: str,
         whales['ENRICHMENT_STATUS'] = 'Needs Manual Research'
         return whales
     
-    # Add enrichment columns
+    # Stats tracking
     enrichment_data = []
-    
     total = len(whales)
     enriched_count = 0
+    with_phone = 0
+    with_email = 0
+    
+    print(f"\n   Processing {total} whales...\n")
     
     for idx, (_, row) in enumerate(whales.iterrows()):
         company = row[owner_col]
         city = row[city_col] if pd.notna(row[city_col]) else None
         
-        print(f"   [{idx+1}/{total}] {company[:50]}...", end='')
+        # Progress indicator
+        progress = f"[{idx+1:3d}/{total}]"
+        print(f"   {progress} {company[:45]:<45}", end='')
         
         contact = None
         
-        # Try Apollo first
+        # Try Apollo first (faster /v1/people/match endpoint)
         if apollo:
-            contact = apollo.search_people(company, city)
+            contact = apollo.enrich_whale(company, city)
             time.sleep(APOLLO_RATE_LIMIT_DELAY)
         
-        # Fallback to Hunter
+        # Fallback to Hunter if Apollo didn't find anyone
         if not contact and hunter:
             contact = hunter.search_domain(company)
             time.sleep(APOLLO_RATE_LIMIT_DELAY)
         
-        if contact and contact.get('email'):
+        if contact and (contact.get('email') or contact.get('phone')):
             enriched_count += 1
+            if contact.get('phone'):
+                with_phone += 1
+            if contact.get('email'):
+                with_email += 1
+            
             enrichment_data.append({
                 'CONTACT_NAME': contact.get('name', ''),
                 'CONTACT_TITLE': contact.get('title', ''),
@@ -449,7 +488,10 @@ def enrich_leads(whales: pd.DataFrame, owner_col: str, city_col: str,
                 'LINKEDIN_URL': contact.get('linkedin', ''),
                 'ENRICHMENT_STATUS': 'Enriched'
             })
-            print(f" ✓ {contact.get('name', 'Found')}")
+            
+            # Show success with contact details
+            title_short = (contact.get('title') or '')[:15]
+            print(f" ✓ {contact.get('name', '')[:20]} ({title_short})")
         else:
             enrichment_data.append({
                 'CONTACT_NAME': '',
@@ -459,14 +501,23 @@ def enrich_leads(whales: pd.DataFrame, owner_col: str, city_col: str,
                 'LINKEDIN_URL': '',
                 'ENRICHMENT_STATUS': 'Needs Manual Research'
             })
-            print(" ✗ Not found")
+            print(" ✗")
     
     # Add enrichment columns to dataframe
     enrichment_df = pd.DataFrame(enrichment_data)
     whales = whales.reset_index(drop=True)
     whales = pd.concat([whales, enrichment_df], axis=1)
     
-    print(f"\n   ✅ Enriched {enriched_count}/{total} leads ({enriched_count/total*100:.1f}%)")
+    # Summary
+    print(f"\n   " + "="*50)
+    print(f"   📊 ENRICHMENT SUMMARY")
+    print(f"   " + "="*50)
+    print(f"   Total Processed:    {total}")
+    print(f"   Successfully Found: {enriched_count} ({enriched_count/total*100:.1f}%)")
+    print(f"   With Phone Number:  {with_phone} ({with_phone/total*100:.1f}%)")
+    print(f"   With Email:         {with_email} ({with_email/total*100:.1f}%)")
+    print(f"   Needs Research:     {total - enriched_count}")
+    print(f"   " + "="*50)
     
     return whales
 
