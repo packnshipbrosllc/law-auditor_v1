@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Upload, 
   Coins, 
@@ -21,15 +21,24 @@ import {
   Search,
   X,
   Loader2,
-  RefreshCw,
   FileText,
   Send,
   Sparkles,
   Target,
-  Zap
+  Zap,
+  Crown,
+  Medal,
+  Bot,
+  PhoneCall,
+  SlidersHorizontal,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDropzone } from 'react-dropzone';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface WhaleLead {
   id: string;
@@ -48,16 +57,136 @@ interface WhaleLead {
   enrichmentStatus: 'Enriched' | 'Needs Manual Research' | 'Pending';
 }
 
-// Contract PDF Generator
+type LeadTier = 'gold' | 'silver' | 'automation';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getLeadTier(value: number): LeadTier {
+  if (value >= 25000) return 'gold';
+  if (value >= 10000) return 'silver';
+  return 'automation';
+}
+
+function getTierStyles(tier: LeadTier) {
+  switch (tier) {
+    case 'gold':
+      return {
+        bg: 'bg-gradient-to-r from-amber-950/50 to-yellow-950/30',
+        border: 'border-l-4 border-l-gold',
+        badge: 'bg-gold/20 text-gold',
+        icon: Crown,
+        label: 'GOLD',
+        action: 'Priority Call'
+      };
+    case 'silver':
+      return {
+        bg: 'bg-gradient-to-r from-slate-800/50 to-zinc-800/30',
+        border: 'border-l-4 border-l-slate-400',
+        badge: 'bg-slate-400/20 text-slate-300',
+        icon: Medal,
+        label: 'SILVER',
+        action: 'Generate Contract'
+      };
+    case 'automation':
+      return {
+        bg: 'bg-slate-900/30',
+        border: 'border-l-4 border-l-blue-500/50',
+        badge: 'bg-blue-500/20 text-blue-400',
+        icon: Bot,
+        label: 'AUTO',
+        action: 'AI Warm-up'
+      };
+  }
+}
+
+// Priority Call Script Generator
+function openPriorityCallScript(whale: WhaleLead) {
+  const script = `
+PRIORITY CALL SCRIPT - GOLD TIER
+================================
+Company: ${whale.ownerName}
+Contact: ${whale.contactName || 'Decision Maker'}
+Title: ${whale.contactTitle || 'Owner/CFO'}
+Phone: ${whale.contactPhone || 'N/A'}
+Value: $${whale.cashReported.toLocaleString()}
+Your Fee: $${whale.potentialFee.toLocaleString()}
+
+OPENING:
+"Hi ${whale.contactName?.split(' ')[0] || 'there'}, this is John Dillard. I'm a licensed property investigator and I found that ${whale.ownerName} has $${whale.cashReported.toLocaleString()} in unclaimed funds with the California State Controller."
+
+PAUSE - Let them react
+
+QUALIFYING:
+"Are you the right person to discuss recovering these funds?"
+
+IF YES:
+"Great. I can help you recover this. My fee is 10%, which is $${whale.potentialFee.toLocaleString()}. I handle all the paperwork."
+
+DISCLOSURE (Required by CCP 1582):
+"I should mention - you CAN claim this yourself for free at claimit.ca.gov. Most businesses prefer to have someone handle it professionally."
+
+CLOSE:
+"I can email you the agreement right now. What's the best email?"
+
+OBJECTION HANDLERS:
+- "I need to think about it" → "Totally understand. These funds don't expire, but I'm reaching out to other businesses in ${whale.city} this week. Can I follow up Friday?"
+- "Is this a scam?" → "Great question. You can verify these funds yourself at claimit.ca.gov. I'm just offering to handle the recovery paperwork."
+- "10% is too much" → "That's the California legal maximum. Given the paperwork involved, most CFOs find it worth their time savings."
+`;
+  
+  // Open in new window as a printable script
+  const win = window.open('', '_blank', 'width=600,height=800');
+  if (win) {
+    win.document.write(`<html><head><title>Call Script - ${whale.ownerName}</title>
+      <style>body{font-family:monospace;padding:20px;white-space:pre-wrap;background:#1a1a2e;color:#eee;line-height:1.6}
+      h1{color:#ffd700;}</style></head>
+      <body><h1>🎯 PRIORITY CALL</h1>${script}</body></html>`);
+    win.document.close();
+  }
+  
+  // Also trigger phone dialer
+  if (whale.contactPhone) {
+    window.location.href = `tel:${whale.contactPhone.replace(/[^\d+]/g, '')}`;
+  }
+}
+
+// AI Warm-up Email Generator
+function generateAIWarmupEmail(whale: WhaleLead) {
+  const subject = encodeURIComponent(`Quick Question About ${whale.ownerName}`);
+  const body = encodeURIComponent(
+`Hi ${whale.contactName?.split(' ')[0] || 'there'},
+
+I came across some interesting data while reviewing California's unclaimed property database.
+
+It looks like ${whale.ownerName} may have approximately $${whale.cashReported.toLocaleString()} in unclaimed funds registered with the State Controller's Office.
+
+I help businesses recover these funds - completely free to check, and I only charge a fee (10%, the CA legal max) if we successfully recover the money.
+
+Would you be open to a quick 5-minute call to see if this matches your records?
+
+Quick note: You can also claim directly for free at claimit.ca.gov if you prefer to handle it yourself.
+
+Best,
+John Dillard
+LawAuditor Asset Recovery
+Licensed Property Investigator - California
+
+P.S. This isn't urgent - these funds don't expire. But I'm reaching out to other ${whale.city} businesses this week and wanted to give you first notice.`
+  );
+  
+  window.location.href = `mailto:${whale.contactEmail}?subject=${subject}&body=${body}`;
+}
+
+// Contract PDF Generator (from jsPDF)
 function generateContractPDF(whale: WhaleLead): void {
-  // Dynamic import jsPDF
   import('jspdf').then(({ jsPDF }) => {
     const doc = new jsPDF();
     const today = new Date().toLocaleDateString('en-US', { 
       year: 'numeric', month: 'long', day: 'numeric' 
     });
     
-    // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text('UNCLAIMED PROPERTY RECOVERY AGREEMENT', 105, 25, { align: 'center' });
@@ -66,11 +195,9 @@ function generateContractPDF(whale: WhaleLead): void {
     doc.setFont('helvetica', 'normal');
     doc.text('California Civil Code Section 1582 Compliant', 105, 32, { align: 'center' });
     
-    // Line separator
     doc.setLineWidth(0.5);
     doc.line(20, 38, 190, 38);
     
-    // Agreement body
     doc.setFontSize(11);
     let y = 50;
     
@@ -108,7 +235,6 @@ function generateContractPDF(whale: WhaleLead): void {
     doc.setFont('helvetica', 'normal');
     y += 8;
     
-    // Fee calculation box
     doc.setFillColor(240, 240, 240);
     doc.rect(25, y - 4, 160, 20, 'F');
     doc.setFont('helvetica', 'bold');
@@ -119,7 +245,6 @@ function generateContractPDF(whale: WhaleLead): void {
     doc.setFontSize(11);
     y += 28;
     
-    // Required disclosure
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(180, 0, 0);
     doc.text('REQUIRED DISCLOSURE (CCP 1582):', 20, y);
@@ -132,11 +257,7 @@ function generateContractPDF(whale: WhaleLead): void {
       'You are not required to use this service. You may claim this property for FREE',
       'directly from the California State Controller\'s Office at:',
       '',
-      'Website: https://claimit.ca.gov',
-      'Phone: 1-800-992-4647',
-      '',
-      'This agreement does not guarantee recovery. The fee is only payable upon',
-      'successful recovery of funds to the Property Owner.'
+      'Website: https://claimit.ca.gov    Phone: 1-800-992-4647'
     ];
     
     disclosure.forEach(line => {
@@ -144,30 +265,8 @@ function generateContractPDF(whale: WhaleLead): void {
       y += 5;
     });
     
-    y += 10;
-    doc.setFontSize(11);
-    
-    // Terms
-    doc.setFont('helvetica', 'bold');
-    doc.text('TERMS:', 20, y);
-    doc.setFont('helvetica', 'normal');
-    y += 8;
-    
-    const terms = [
-      '1. Agent will file all necessary claim forms with the State Controller.',
-      '2. Fee is due only upon successful recovery of funds.',
-      '3. Owner may cancel within 30 days without penalty.',
-      '4. Agent maintains all required state licenses and bonds.'
-    ];
-    
-    terms.forEach(term => {
-      doc.text(term, 25, y);
-      y += 7;
-    });
-    
     y += 15;
     
-    // Signature lines
     doc.line(25, y, 90, y);
     doc.line(110, y, 175, y);
     y += 5;
@@ -181,141 +280,121 @@ function generateContractPDF(whale: WhaleLead): void {
     doc.text(`Date: ${today}`, 25, y);
     doc.text(`Date: ${today}`, 110, y);
     
-    // Footer
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text('LawAuditor Asset Recovery | Licensed Property Investigator | California', 105, 285, { align: 'center' });
-    doc.text('Generated ' + new Date().toISOString(), 105, 290, { align: 'center' });
     
-    // Save
-    const filename = `Contract_${whale.ownerName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)}_${today.replace(/[^a-zA-Z0-9]/g, '')}.pdf`;
+    const filename = `Contract_${whale.ownerName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)}.pdf`;
     doc.save(filename);
   });
 }
 
-// Email contract function
-function emailContract(whale: WhaleLead): void {
-  const subject = encodeURIComponent(`Recovery Agreement - ${whale.ownerName} - $${whale.cashReported.toLocaleString()}`);
-  const body = encodeURIComponent(
-    `Dear ${whale.contactName || 'Authorized Representative'},\n\n` +
-    `Attached please find the Recovery Agreement for the unclaimed property registered to ${whale.ownerName}.\n\n` +
-    `PROPERTY DETAILS:\n` +
-    `• Estimated Value: $${whale.cashReported.toLocaleString()}\n` +
-    `• Recovery Fee (10%): $${whale.potentialFee.toLocaleString()}\n` +
-    `• Location: ${whale.city}, California\n\n` +
-    `IMPORTANT DISCLOSURE (Required by CCP 1582):\n` +
-    `You can claim this property for FREE at claimit.ca.gov or by calling 1-800-992-4647.\n\n` +
-    `If you prefer professional assistance, please sign the attached agreement and return via:\n` +
-    `• Email reply with signed PDF\n` +
-    `• DocuSign (link will be sent upon request)\n\n` +
-    `I'm available to discuss at your convenience.\n\n` +
-    `Best regards,\n` +
-    `John Dillard\n` +
-    `LawAuditor Asset Recovery\n` +
-    `Licensed Property Investigator - California`
-  );
-  window.location.href = `mailto:${whale.contactEmail}?subject=${subject}&body=${body}`;
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function WhaleRecoveryDashboard() {
+  // Sample data
   const [whales, setWhales] = useState<WhaleLead[]>([
     { 
-      id: 'W001', 
-      ownerName: 'SACRAMENTO TECH SOLUTIONS LLC', 
-      city: 'SACRAMENTO', 
-      cashReported: 47500, 
-      potentialFee: 4750, 
-      propertyType: 'Cash',
-      status: 'high_interest',
-      contactName: 'Michael Chen',
-      contactTitle: 'CEO',
-      contactEmail: 'mchen@sactech.com',
-      contactPhone: '+1-916-555-0142',
-      linkedinUrl: 'https://linkedin.com/in/michaelchen',
+      id: 'W001', ownerName: 'SACRAMENTO TECH SOLUTIONS LLC', city: 'SACRAMENTO', 
+      cashReported: 47500, potentialFee: 4750, propertyType: 'Cash', status: 'high_interest',
+      contactName: 'Michael Chen', contactTitle: 'CEO', contactEmail: 'mchen@sactech.com',
+      contactPhone: '+1-916-555-0142', linkedinUrl: 'https://linkedin.com/in/michaelchen',
       enrichmentStatus: 'Enriched'
     },
     { 
-      id: 'W002', 
-      ownerName: 'BAY AREA INVESTMENTS INC', 
-      city: 'SAN FRANCISCO', 
-      cashReported: 125000, 
-      potentialFee: 12500, 
-      propertyType: 'Securities',
-      status: 'high_interest',
-      lastContact: '2026-01-28',
-      contactName: 'Sarah Williams',
-      contactTitle: 'CFO',
-      contactEmail: 'swilliams@bayareainv.com',
-      contactPhone: '+1-415-555-0198',
-      linkedinUrl: 'https://linkedin.com/in/sarahwilliams',
+      id: 'W002', ownerName: 'BAY AREA INVESTMENTS INC', city: 'SAN FRANCISCO', 
+      cashReported: 125000, potentialFee: 12500, propertyType: 'Securities', status: 'new',
+      contactName: 'Sarah Williams', contactTitle: 'CFO', contactEmail: 'swilliams@bayareainv.com',
+      contactPhone: '+1-415-555-0198', linkedinUrl: 'https://linkedin.com/in/sarahwilliams',
       enrichmentStatus: 'Enriched'
     },
     { 
-      id: 'W003', 
-      ownerName: 'PALO ALTO CONSULTING GROUP LLP', 
-      city: 'PALO ALTO', 
-      cashReported: 89000, 
-      potentialFee: 8900, 
-      propertyType: 'Cash',
-      status: 'signed',
-      lastContact: '2026-01-25',
-      contactName: 'David Park',
-      contactTitle: 'Managing Partner',
-      contactEmail: 'dpark@paconsulting.com',
-      contactPhone: '+1-650-555-0167',
-      linkedinUrl: 'https://linkedin.com/in/davidpark',
+      id: 'W003', ownerName: 'PALO ALTO CONSULTING GROUP LLP', city: 'PALO ALTO', 
+      cashReported: 89000, potentialFee: 8900, propertyType: 'Cash', status: 'signed',
+      contactName: 'David Park', contactTitle: 'Managing Partner', contactEmail: 'dpark@paconsulting.com',
+      contactPhone: '+1-650-555-0167', linkedinUrl: 'https://linkedin.com/in/davidpark',
       enrichmentStatus: 'Enriched'
     },
     { 
-      id: 'W004', 
-      ownerName: 'FOLSOM MANUFACTURING CORP', 
-      city: 'FOLSOM', 
-      cashReported: 32000, 
-      potentialFee: 3200, 
-      propertyType: 'Cash',
-      status: 'new',
+      id: 'W004', ownerName: 'FOLSOM MANUFACTURING CORP', city: 'FOLSOM', 
+      cashReported: 18500, potentialFee: 1850, propertyType: 'Cash', status: 'new',
+      contactName: 'Robert Taylor', contactTitle: 'Controller', contactEmail: 'rtaylor@folsommfg.com',
+      contactPhone: '+1-916-555-0289', enrichmentStatus: 'Enriched'
+    },
+    { 
+      id: 'W005', ownerName: 'ROSEVILLE HOLDINGS LLC', city: 'ROSEVILLE', 
+      cashReported: 78500, potentialFee: 7850, propertyType: 'Cash', status: 'contacted',
+      contactName: 'Jennifer Martinez', contactTitle: 'Owner', contactEmail: 'jmartinez@rosevilleholdings.com',
+      contactPhone: '+1-916-555-0234', enrichmentStatus: 'Enriched'
+    },
+    { 
+      id: 'W006', ownerName: 'OAKLAND DISTRIBUTION CENTER INC', city: 'OAKLAND', 
+      cashReported: 32000, potentialFee: 3200, propertyType: 'Cash', status: 'new',
+      contactName: 'Marcus Johnson', contactTitle: 'CFO', contactEmail: 'mjohnson@oaklanddist.com',
+      contactPhone: '+1-510-555-0156', enrichmentStatus: 'Enriched'
+    },
+    { 
+      id: 'W007', ownerName: 'SAN JOSE TECH VENTURES LLC', city: 'SAN JOSE', 
+      cashReported: 8500, potentialFee: 850, propertyType: 'Cash', status: 'new',
+      contactName: 'Lisa Wong', contactTitle: 'Founder', contactEmail: 'lwong@sjtechventures.com',
+      contactPhone: '+1-408-555-0178', enrichmentStatus: 'Enriched'
+    },
+    { 
+      id: 'W008', ownerName: 'BERKELEY RESEARCH PARTNERS LLP', city: 'BERKELEY', 
+      cashReported: 6200, potentialFee: 620, propertyType: 'Cash', status: 'new',
       enrichmentStatus: 'Needs Manual Research'
-    },
-    { 
-      id: 'W005', 
-      ownerName: 'ROSEVILLE HOLDINGS LLC', 
-      city: 'ROSEVILLE', 
-      cashReported: 78500, 
-      potentialFee: 7850, 
-      propertyType: 'Cash',
-      status: 'contacted',
-      contactName: 'Jennifer Martinez',
-      contactTitle: 'Owner',
-      contactEmail: 'jmartinez@rosevilleholdings.com',
-      contactPhone: '+1-916-555-0234',
-      enrichmentStatus: 'Enriched'
     },
   ]);
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [filterCity, setFilterCity] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterEnrichment, setFilterEnrichment] = useState<string>('all');
+  // Filters
+  const [selectedCity, setSelectedCity] = useState<string>('all');
+  const [minValue, setMinValue] = useState<number>(10000);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [generatingContract, setGeneratingContract] = useState<string | null>(null);
 
-  // Calculate stats
-  const totalCash = whales.reduce((sum, w) => sum + w.cashReported, 0);
-  const totalFees = whales.reduce((sum, w) => sum + w.potentialFee, 0);
-  const newLeads = whales.filter(w => w.status === 'new').length;
-  const enrichedLeads = whales.filter(w => w.enrichmentStatus === 'Enriched').length;
-  const readyToContact = whales.filter(w => w.status === 'new' && w.enrichmentStatus === 'Enriched').length;
-  
-  // HIGH INTEREST commission projection
-  const highInterestLeads = whales.filter(w => w.status === 'high_interest');
-  const projectedCommission = highInterestLeads.reduce((sum, w) => sum + w.potentialFee, 0);
-  
-  // Signed/Recovered (confirmed revenue)
-  const confirmedRevenue = whales
-    .filter(w => w.status === 'signed' || w.status === 'recovered')
-    .reduce((sum, w) => sum + w.potentialFee, 0);
+  // Get unique cities
+  const cities = useMemo(() => {
+    const uniqueCities = [...new Set(whales.map(w => w.city))].sort();
+    return uniqueCities;
+  }, [whales]);
 
-  // Process uploaded CSV/JSON
+  // Filtered whales based on city and min value
+  const filteredWhales = useMemo(() => {
+    return whales.filter(w => {
+      if (selectedCity !== 'all' && w.city !== selectedCity) return false;
+      if (w.cashReported < minValue) return false;
+      if (searchQuery && !w.ownerName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    }).sort((a, b) => b.cashReported - a.cashReported); // Highest value first
+  }, [whales, selectedCity, minValue, searchQuery]);
+
+  // Real-time stats based on filters
+  const stats = useMemo(() => {
+    const filtered = filteredWhales;
+    const goldLeads = filtered.filter(w => w.cashReported >= 25000);
+    const silverLeads = filtered.filter(w => w.cashReported >= 10000 && w.cashReported < 25000);
+    const autoLeads = filtered.filter(w => w.cashReported >= 5000 && w.cashReported < 10000);
+    const highInterest = filtered.filter(w => w.status === 'high_interest' || w.status === 'signed');
+    
+    return {
+      totalValue: filtered.reduce((sum, w) => sum + w.cashReported, 0),
+      totalFees: filtered.reduce((sum, w) => sum + w.potentialFee, 0),
+      projectedCommission: highInterest.reduce((sum, w) => sum + w.potentialFee, 0),
+      goldCount: goldLeads.length,
+      goldValue: goldLeads.reduce((sum, w) => sum + w.potentialFee, 0),
+      silverCount: silverLeads.length,
+      silverValue: silverLeads.reduce((sum, w) => sum + w.potentialFee, 0),
+      autoCount: autoLeads.length,
+      autoValue: autoLeads.reduce((sum, w) => sum + w.potentialFee, 0),
+      enrichedCount: filtered.filter(w => w.enrichmentStatus === 'Enriched').length,
+      totalCount: filtered.length
+    };
+  }, [filteredWhales]);
+
+  // CSV/JSON import
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
     setIsProcessing(true);
@@ -339,10 +418,11 @@ export default function WhaleRecoveryDashboard() {
           contactEmail: String(row.CONTACT_EMAIL || row.contactEmail || ''),
           contactPhone: String(row.CONTACT_PHONE || row.contactPhone || ''),
           linkedinUrl: String(row.LINKEDIN_URL || row.linkedinUrl || ''),
-          enrichmentStatus: (row.ENRICHMENT_STATUS || row.enrichmentStatus || 'Needs Manual Research') as WhaleLead['enrichmentStatus'],
+          enrichmentStatus: (row.ENRICHMENT_STATUS || 'Needs Manual Research') as WhaleLead['enrichmentStatus'],
         }));
         setWhales(newWhales);
       } else {
+        // CSV parsing
         const lines = text.split('\n');
         const headers = lines[0].split(',').map(h => h.trim().toUpperCase());
         
@@ -391,15 +471,6 @@ export default function WhaleRecoveryDashboard() {
     disabled: isProcessing
   });
 
-  // Filter
-  const filteredWhales = whales.filter(w => {
-    if (filterCity !== 'all' && !w.city.includes(filterCity)) return false;
-    if (filterStatus !== 'all' && w.status !== filterStatus) return false;
-    if (filterEnrichment !== 'all' && w.enrichmentStatus !== filterEnrichment) return false;
-    if (searchQuery && !w.ownerName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
-
   // Status update
   const updateWhaleStatus = (id: string, status: WhaleLead['status']) => {
     setWhales(prev => prev.map(w => 
@@ -407,121 +478,128 @@ export default function WhaleRecoveryDashboard() {
     ));
   };
 
-  // Contact actions
-  const handleCall = (phone: string) => window.location.href = `tel:${phone.replace(/[^\d+]/g, '')}`;
-  const handleLinkedIn = (url: string) => window.open(url, '_blank');
-  
-  // Contract generation
-  const handleGenerateContract = async (whale: WhaleLead) => {
-    setGeneratingContract(whale.id);
-    await new Promise(r => setTimeout(r, 500)); // Brief loading state
-    generateContractPDF(whale);
-    setGeneratingContract(null);
+  // Tier action handler
+  const handleTierAction = async (whale: WhaleLead, tier: LeadTier) => {
+    switch (tier) {
+      case 'gold':
+        openPriorityCallScript(whale);
+        updateWhaleStatus(whale.id, 'contacted');
+        break;
+      case 'silver':
+        setGeneratingContract(whale.id);
+        await new Promise(r => setTimeout(r, 300));
+        generateContractPDF(whale);
+        setGeneratingContract(null);
+        break;
+      case 'automation':
+        generateAIWarmupEmail(whale);
+        updateWhaleStatus(whale.id, 'contacted');
+        break;
+    }
   };
 
   return (
-    <div className="p-6 lg:p-8 bg-slate-950 min-h-screen">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Coins className="w-8 h-8 text-gold" />
-          <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white">
-            Whale Recovery Dashboard
-          </h1>
-          <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest">
-            200 Lead Pipeline
-          </span>
+    <div className="flex min-h-screen bg-slate-950">
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* CITY SEARCH PANEL (Sidebar) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col">
+        <div className="flex items-center gap-2 mb-6">
+          <SlidersHorizontal className="w-5 h-5 text-gold" />
+          <h2 className="text-sm font-black uppercase tracking-widest text-white">City Panel</h2>
         </div>
-        <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">
-          Northern California • CCP 1582 Compliant • 10% Fee Cap • Apollo.io Enriched
-        </p>
-      </div>
 
-      {/* HERO: Projected Commission Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 border border-emerald-700/50 p-6 lg:p-8 relative overflow-hidden"
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="w-5 h-5 text-emerald-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">
-              Projected Commission (High Interest Leads)
-            </span>
+        {/* City Filter */}
+        <div className="mb-4">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 block">
+            Filter by City
+          </label>
+          <select 
+            value={selectedCity}
+            onChange={(e) => setSelectedCity(e.target.value)}
+            className="w-full bg-slate-800 border border-slate-700 text-white px-3 py-2.5 text-sm rounded"
+          >
+            <option value="all">All Northern California</option>
+            {cities.map(city => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Minimum Value Slider */}
+        <div className="mb-6">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 block">
+            Minimum Value: ${minValue.toLocaleString()}
+          </label>
+          <input 
+            type="range" 
+            min="5000" 
+            max="50000" 
+            step="1000"
+            value={minValue}
+            onChange={(e) => setMinValue(Number(e.target.value))}
+            className="w-full accent-gold"
+          />
+          <div className="flex justify-between text-[9px] text-slate-600 mt-1">
+            <span>$5k</span>
+            <span>$50k</span>
           </div>
-          <div className="flex items-baseline gap-4 flex-wrap">
-            <span className="text-5xl lg:text-7xl font-black text-white tracking-tight">
-              ${projectedCommission.toLocaleString()}
-            </span>
+        </div>
+
+        {/* Recoverable Fees Card */}
+        <div className="bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-800/50 p-4 rounded mb-4">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-emerald-500 mb-1">
+            Total Recoverable Fees
+          </div>
+          <div className="text-3xl font-black text-white">
+            ${stats.totalFees.toLocaleString()}
+          </div>
+          <div className="text-[10px] text-emerald-400 mt-1">
+            from {stats.totalCount} leads in view
+          </div>
+        </div>
+
+        {/* Tier Breakdown */}
+        <div className="space-y-2 mb-6">
+          <div className="bg-amber-950/30 border border-amber-800/30 p-3 rounded flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-gold" />
-              <span className="text-lg lg:text-xl font-bold text-emerald-400">
-                {highInterestLeads.length} hot leads
-              </span>
+              <Crown className="w-4 h-4 text-gold" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gold">Gold</span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold text-white">{stats.goldCount}</div>
+              <div className="text-[9px] text-amber-400">${stats.goldValue.toLocaleString()}</div>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-6 text-sm">
+
+          <div className="bg-slate-800/30 border border-slate-700/30 p-3 rounded flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              <span className="text-emerald-300">Confirmed: ${confirmedRevenue.toLocaleString()}</span>
+              <Medal className="w-4 h-4 text-slate-400" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Silver</span>
             </div>
+            <div className="text-right">
+              <div className="text-sm font-bold text-white">{stats.silverCount}</div>
+              <div className="text-[9px] text-slate-400">${stats.silverValue.toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="bg-blue-950/30 border border-blue-800/30 p-3 rounded flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-gold" />
-              <span className="text-slate-400">Pipeline Total: ${totalFees.toLocaleString()}</span>
+              <Bot className="w-4 h-4 text-blue-400" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Auto</span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold text-white">{stats.autoCount}</div>
+              <div className="text-[9px] text-blue-400">${stats.autoValue.toLocaleString()}</div>
             </div>
           </div>
         </div>
-      </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <div className="bg-gradient-to-br from-amber-950 to-slate-900 border border-amber-800/50 p-3 lg:p-4">
-          <DollarSign className="w-4 h-4 text-gold mb-1" />
-          <div className="text-xl lg:text-2xl font-mono font-bold text-white">${(totalCash / 1000).toFixed(0)}k</div>
-          <div className="text-[8px] lg:text-[9px] font-bold text-amber-600 uppercase tracking-widest">Total Value</div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 p-3 lg:p-4">
-          <Building2 className="w-4 h-4 text-blue-500 mb-1" />
-          <div className="text-xl lg:text-2xl font-mono font-bold text-white">{whales.length}</div>
-          <div className="text-[8px] lg:text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pipeline</div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 p-3 lg:p-4">
-          <AlertTriangle className="w-4 h-4 text-amber-500 mb-1" />
-          <div className="text-xl lg:text-2xl font-mono font-bold text-amber-400">{newLeads}</div>
-          <div className="text-[8px] lg:text-[9px] font-bold text-slate-500 uppercase tracking-widest">New</div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 p-3 lg:p-4">
-          <User className="w-4 h-4 text-emerald-400 mb-1" />
-          <div className="text-xl lg:text-2xl font-mono font-bold text-emerald-400">{enrichedLeads}</div>
-          <div className="text-[8px] lg:text-[9px] font-bold text-slate-500 uppercase tracking-widest">Enriched</div>
-        </div>
-
-        <div className="bg-emerald-950 border border-emerald-800/50 p-3 lg:p-4">
-          <Sparkles className="w-4 h-4 text-gold mb-1" />
-          <div className="text-xl lg:text-2xl font-mono font-bold text-gold">{highInterestLeads.length}</div>
-          <div className="text-[8px] lg:text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Hot Leads</div>
-        </div>
-
-        <div className="bg-blue-950 border border-blue-800/50 p-3 lg:p-4">
-          <FileText className="w-4 h-4 text-blue-400 mb-1" />
-          <div className="text-xl lg:text-2xl font-mono font-bold text-blue-400">
-            {whales.filter(w => w.status === 'signed').length}
-          </div>
-          <div className="text-[8px] lg:text-[9px] font-bold text-blue-600 uppercase tracking-widest">Signed</div>
-        </div>
-      </div>
-
-      {/* Upload + Filters */}
-      <div className="grid lg:grid-cols-4 gap-3 mb-6">
+        {/* Import */}
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed p-4 text-center cursor-pointer transition-all ${
-            isDragActive ? 'border-gold bg-gold/5' : 'border-slate-700 bg-slate-900/50 hover:border-slate-600'
+          className={`border-2 border-dashed p-4 text-center cursor-pointer transition-all rounded ${
+            isDragActive ? 'border-gold bg-gold/5' : 'border-slate-700 hover:border-slate-600'
           }`}
         >
           <input {...getInputProps()} />
@@ -530,144 +608,166 @@ export default function WhaleRecoveryDashboard() {
           ) : (
             <Upload className="w-5 h-5 text-slate-500 mx-auto mb-1" />
           )}
-          <span className="text-[10px] font-black uppercase tracking-widest text-white">Import 200 Leads</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            Import Leads
+          </span>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-3">
-          <div className="relative">
-            <Search className="w-3 h-3 text-slate-500 absolute left-2 top-1/2 -translate-y-1/2" />
+        {/* Enriched stat */}
+        <div className="mt-auto pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-slate-500">Enriched Contacts</span>
+            <span className="text-emerald-400 font-bold">{stats.enrichedCount}/{stats.totalCount}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* MAIN CONTENT */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <main className="flex-1 p-6 overflow-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <Coins className="w-7 h-7 text-gold" />
+              <h1 className="text-2xl font-black tracking-tight text-white">
+                Whale Recovery
+              </h1>
+              {selectedCity !== 'all' && (
+                <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-[9px] font-black uppercase tracking-widest rounded">
+                  {selectedCity}
+                </span>
+              )}
+            </div>
+            <p className="text-slate-500 text-xs mt-1">
+              Northern California • CCP 1582 • 10% Fee Cap
+            </p>
+          </div>
+          
+          {/* Search */}
+          <div className="relative w-64">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search businesses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 text-white pl-7 pr-3 py-1.5 text-xs"
+              className="w-full bg-slate-800 border border-slate-700 text-white pl-10 pr-4 py-2 text-sm rounded"
             />
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-3 lg:col-span-2">
-          <div className="grid grid-cols-3 gap-2">
-            <select 
-              value={filterCity}
-              onChange={(e) => setFilterCity(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-white px-2 py-1.5 text-[10px]"
-            >
-              <option value="all">All Cities</option>
-              <option value="SACRAMENTO">Sacramento</option>
-              <option value="SAN FRANCISCO">San Francisco</option>
-              <option value="PALO ALTO">Palo Alto</option>
-              <option value="SAN JOSE">San Jose</option>
-              <option value="OAKLAND">Oakland</option>
-            </select>
-            <select 
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-white px-2 py-1.5 text-[10px]"
-            >
-              <option value="all">All Status</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="high_interest">High Interest 🔥</option>
-              <option value="signed">Signed</option>
-              <option value="recovered">Recovered</option>
-            </select>
-            <select 
-              value={filterEnrichment}
-              onChange={(e) => setFilterEnrichment(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-white px-2 py-1.5 text-[10px]"
-            >
-              <option value="all">All Enrichment</option>
-              <option value="Enriched">Enriched ✓</option>
-              <option value="Needs Manual Research">Needs Research</option>
-            </select>
+        {/* PROJECTED COMMISSION HERO */}
+        <motion.div
+          key={`${selectedCity}-${minValue}`}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 border border-emerald-700/50 p-6 mb-6 relative overflow-hidden rounded"
+        >
+          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="w-4 h-4 text-emerald-400" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">
+                  Projected Commission
+                </span>
+                {selectedCity !== 'all' && (
+                  <span className="text-[9px] text-emerald-500">• {selectedCity}</span>
+                )}
+              </div>
+              <div className="text-4xl lg:text-5xl font-black text-white tracking-tight">
+                ${stats.projectedCommission.toLocaleString()}
+              </div>
+              <div className="text-[10px] text-emerald-400 mt-1">
+                from high-interest & signed leads
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Pipeline Total</div>
+              <div className="text-2xl font-mono font-bold text-gold">${stats.totalFees.toLocaleString()}</div>
+            </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      {/* Whale Table */}
-      <div className="bg-slate-900 border border-slate-800 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-xs font-black uppercase tracking-[0.15em] text-white">
-            Whale Pipeline ({filteredWhales.length})
-          </h2>
-          <Button variant="outline" className="border-slate-700 text-slate-400 text-[9px] font-bold uppercase tracking-widest h-7 px-3">
-            <Download className="w-3 h-3 mr-1" /> Export
-          </Button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-800 text-left">
-                <th className="px-3 py-2 text-[8px] font-black uppercase tracking-widest text-slate-500">Business</th>
-                <th className="px-3 py-2 text-[8px] font-black uppercase tracking-widest text-slate-500">Decision Maker</th>
-                <th className="px-3 py-2 text-[8px] font-black uppercase tracking-widest text-slate-500">Value</th>
-                <th className="px-3 py-2 text-[8px] font-black uppercase tracking-widest text-slate-500">Your 10%</th>
-                <th className="px-3 py-2 text-[8px] font-black uppercase tracking-widest text-slate-500">Status</th>
-                <th className="px-3 py-2 text-[8px] font-black uppercase tracking-widest text-slate-500">Quick Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {filteredWhales.map((whale) => (
-                <motion.tr 
+        {/* WHALE TABLE */}
+        <div className="bg-slate-900 border border-slate-800 rounded overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h2 className="text-xs font-black uppercase tracking-[0.15em] text-white">
+                Pipeline ({filteredWhales.length})
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-[9px] text-gold">
+                  <Crown className="w-3 h-3" /> {'>'}$25k
+                </span>
+                <span className="flex items-center gap-1 text-[9px] text-slate-400">
+                  <Medal className="w-3 h-3" /> $10-25k
+                </span>
+                <span className="flex items-center gap-1 text-[9px] text-blue-400">
+                  <Bot className="w-3 h-3" /> $5-10k
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" className="border-slate-700 text-slate-400 text-[9px] font-bold uppercase h-7 px-3">
+              <Download className="w-3 h-3 mr-1" /> Export
+            </Button>
+          </div>
+
+          <div className="divide-y divide-slate-800">
+            {filteredWhales.map((whale) => {
+              const tier = getLeadTier(whale.cashReported);
+              const tierStyle = getTierStyles(tier);
+              const TierIcon = tierStyle.icon;
+
+              return (
+                <motion.div
                   key={whale.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className={`hover:bg-slate-800/50 transition-colors ${
-                    whale.status === 'high_interest' ? 'bg-emerald-950/20' : ''
-                  }`}
+                  className={`${tierStyle.bg} ${tierStyle.border} hover:bg-slate-800/30 transition-colors`}
                 >
-                  <td className="px-3 py-3">
-                    <div className="flex items-start gap-2">
-                      <Building2 className="w-3 h-3 text-slate-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <div className="text-xs text-white font-medium leading-tight">{whale.ownerName}</div>
-                        <div className="flex items-center gap-1 text-[9px] text-slate-500">
-                          <MapPin className="w-2 h-2" />
-                          {whale.city}
+                  <div className="flex items-center gap-4 p-4">
+                    {/* Tier Badge */}
+                    <div className={`${tierStyle.badge} px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-20 justify-center`}>
+                      <TierIcon className="w-3 h-3" />
+                      {tierStyle.label}
+                    </div>
+
+                    {/* Business Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white truncate">{whale.ownerName}</span>
+                        <span className="text-[9px] text-slate-500">{whale.city}</span>
+                      </div>
+                      {whale.contactName && (
+                        <div className="text-[10px] text-slate-400">
+                          {whale.contactName} • {whale.contactTitle}
                         </div>
+                      )}
+                    </div>
+
+                    {/* Value */}
+                    <div className="text-right w-28">
+                      <div className="text-lg font-mono font-bold text-gold">
+                        ${whale.cashReported.toLocaleString()}
+                      </div>
+                      <div className="text-[10px] text-emerald-500">
+                        Fee: ${whale.potentialFee.toLocaleString()}
                       </div>
                     </div>
-                  </td>
 
-                  <td className="px-3 py-3">
-                    {whale.enrichmentStatus === 'Enriched' && whale.contactName ? (
-                      <div>
-                        <div className="text-xs text-white font-medium">{whale.contactName}</div>
-                        <div className="text-[9px] text-emerald-500">{whale.contactTitle}</div>
-                        {whale.contactPhone && (
-                          <div className="text-[9px] text-slate-400 font-mono">{whale.contactPhone}</div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-[9px] font-bold uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5">
-                        Research
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <span className="text-base font-mono font-bold text-gold">
-                      ${whale.cashReported.toLocaleString()}
-                    </span>
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <span className="text-base font-mono font-bold text-emerald-400">
-                      ${whale.potentialFee.toLocaleString()}
-                    </span>
-                  </td>
-
-                  <td className="px-3 py-3">
+                    {/* Status */}
                     <select 
                       value={whale.status}
                       onChange={(e) => updateWhaleStatus(whale.id, e.target.value as WhaleLead['status'])}
-                      className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 border-0 cursor-pointer rounded ${
+                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 border-0 rounded w-28 ${
                         whale.status === 'recovered' ? 'bg-emerald-500/20 text-emerald-400' :
                         whale.status === 'signed' ? 'bg-blue-500/20 text-blue-400' :
                         whale.status === 'high_interest' ? 'bg-gold/20 text-gold' :
                         whale.status === 'contacted' ? 'bg-purple-500/20 text-purple-400' :
-                        'bg-amber-500/20 text-amber-400'
+                        'bg-slate-700/50 text-slate-400'
                       }`}
                     >
                       <option value="new">New</option>
@@ -676,105 +776,91 @@ export default function WhaleRecoveryDashboard() {
                       <option value="signed">Signed</option>
                       <option value="recovered">Recovered</option>
                     </select>
-                  </td>
 
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-0.5">
-                      {/* Call */}
-                      <button 
-                        onClick={() => whale.contactPhone && handleCall(whale.contactPhone)}
-                        disabled={!whale.contactPhone}
-                        className={`p-1.5 rounded transition-colors ${whale.contactPhone ? 'hover:bg-emerald-500/20' : 'opacity-30'}`}
-                        title="Call"
-                      >
-                        <Phone className="w-3.5 h-3.5 text-slate-400 hover:text-emerald-400" />
-                      </button>
-
-                      {/* Email */}
-                      <button 
-                        onClick={() => whale.contactEmail && emailContract(whale)}
-                        disabled={!whale.contactEmail}
-                        className={`p-1.5 rounded transition-colors ${whale.contactEmail ? 'hover:bg-blue-500/20' : 'opacity-30'}`}
-                        title="Email Contract"
-                      >
-                        <Mail className="w-3.5 h-3.5 text-slate-400 hover:text-blue-400" />
-                      </button>
-
-                      {/* LinkedIn */}
-                      <button 
-                        onClick={() => whale.linkedinUrl && handleLinkedIn(whale.linkedinUrl)}
-                        disabled={!whale.linkedinUrl}
-                        className={`p-1.5 rounded transition-colors ${whale.linkedinUrl ? 'hover:bg-blue-600/20' : 'opacity-30'}`}
-                        title="LinkedIn"
-                      >
-                        <Linkedin className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500" />
-                      </button>
-
-                      {/* GENERATE CONTRACT */}
-                      <button 
-                        onClick={() => handleGenerateContract(whale)}
-                        disabled={generatingContract === whale.id}
-                        className="p-1.5 hover:bg-gold/20 rounded transition-colors ml-1"
-                        title="Generate Contract PDF"
-                      >
-                        {generatingContract === whale.id ? (
-                          <Loader2 className="w-3.5 h-3.5 text-gold animate-spin" />
-                        ) : (
-                          <FileText className="w-3.5 h-3.5 text-gold" />
-                        )}
-                      </button>
-
-                      {/* Send for Signature */}
-                      <button 
-                        onClick={() => whale.contactEmail && emailContract(whale)}
-                        disabled={!whale.contactEmail}
-                        className={`p-1.5 rounded transition-colors ${whale.contactEmail ? 'hover:bg-emerald-500/20' : 'opacity-30'}`}
-                        title="Send for Signature"
-                      >
-                        <Send className="w-3.5 h-3.5 text-slate-400 hover:text-emerald-400" />
-                      </button>
+                    {/* Quick Contact */}
+                    <div className="flex items-center gap-1">
+                      {whale.contactPhone && (
+                        <button 
+                          onClick={() => window.location.href = `tel:${whale.contactPhone?.replace(/[^\d+]/g, '')}`}
+                          className="p-1.5 hover:bg-emerald-500/20 rounded"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-slate-400 hover:text-emerald-400" />
+                        </button>
+                      )}
+                      {whale.contactEmail && (
+                        <button 
+                          onClick={() => window.location.href = `mailto:${whale.contactEmail}`}
+                          className="p-1.5 hover:bg-blue-500/20 rounded"
+                        >
+                          <Mail className="w-3.5 h-3.5 text-slate-400 hover:text-blue-400" />
+                        </button>
+                      )}
+                      {whale.linkedinUrl && (
+                        <button 
+                          onClick={() => window.open(whale.linkedinUrl, '_blank')}
+                          className="p-1.5 hover:bg-blue-600/20 rounded"
+                        >
+                          <Linkedin className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500" />
+                        </button>
+                      )}
                     </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      {/* Legal Footer */}
-      <div className="mt-6 p-4 bg-slate-900/50 border border-slate-800">
-        <div className="grid md:grid-cols-4 gap-4 text-[10px]">
-          <div className="flex items-start gap-2">
-            <CheckCircle className="w-3 h-3 text-emerald-500 mt-0.5" />
-            <div>
-              <div className="font-bold text-white">Free Claim Disclosure</div>
-              <div className="text-slate-500">claimit.ca.gov</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="w-3 h-3 text-emerald-500 mt-0.5" />
-            <div>
-              <div className="font-bold text-white">SCO Contract Template</div>
-              <div className="text-slate-500">Official agreement</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="w-3 h-3 text-emerald-500 mt-0.5" />
-            <div>
-              <div className="font-bold text-white">10% Fee Hard-coded</div>
-              <div className="text-slate-500">CCP 1582 max</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="w-3 h-3 text-emerald-500 mt-0.5" />
-            <div>
-              <div className="font-bold text-white">DocuSign Ready</div>
-              <div className="text-slate-500">PDF → signature</div>
-            </div>
+                    {/* TIER ACTION BUTTON */}
+                    <Button
+                      onClick={() => handleTierAction(whale, tier)}
+                      disabled={generatingContract === whale.id || !whale.enrichmentStatus.includes('Enriched')}
+                      className={`text-[9px] font-black uppercase tracking-widest h-8 px-4 rounded ${
+                        tier === 'gold' 
+                          ? 'bg-gold hover:bg-amber-500 text-slate-900' 
+                          : tier === 'silver'
+                          ? 'bg-slate-600 hover:bg-slate-500 text-white'
+                          : 'bg-blue-600 hover:bg-blue-500 text-white'
+                      }`}
+                    >
+                      {generatingContract === whale.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : tier === 'gold' ? (
+                        <>
+                          <PhoneCall className="w-3 h-3 mr-1" />
+                          Priority Call
+                        </>
+                      ) : tier === 'silver' ? (
+                        <>
+                          <FileText className="w-3 h-3 mr-1" />
+                          Contract
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="w-3 h-3 mr-1" />
+                          AI Warm-up
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
-      </div>
+
+        {/* Legal Footer */}
+        <div className="mt-6 p-4 bg-slate-900/50 border border-slate-800 rounded">
+          <div className="flex items-center justify-between text-[9px] text-slate-500">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-emerald-500" /> CCP 1582 Compliant
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-emerald-500" /> 10% Fee Hard-coded
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-emerald-500" /> Free Claim Disclosure
+              </span>
+            </div>
+            <span>claimit.ca.gov</span>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
