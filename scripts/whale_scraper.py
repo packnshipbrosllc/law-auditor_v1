@@ -76,8 +76,8 @@ MIN_WHALE_VALUE = 5000
 # California legal fee cap
 CA_FEE_CAP = 0.10  # 10%
 
-# Default limit for enriched leads
-DEFAULT_LEAD_LIMIT = 100
+# Default limit for enriched leads (200 for maximum pipeline)
+DEFAULT_LEAD_LIMIT = 200
 
 # API rate limiting
 APOLLO_RATE_LIMIT_DELAY = 0.5  # seconds between requests
