@@ -254,3 +254,191 @@ export async function getWhaleLeadCities(): Promise<string[]> {
   return result.rows.map(r => r.city);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DECEASED LEADS TABLE (Estate Recovery)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type DeceasedLeadStatus = 'new' | 'contacted' | 'claimed';
+
+export interface PotentialHeir {
+  name: string;
+  relation: string; // e.g., "Spouse", "Child", "Sibling", "Parent"
+  contact_info: string | null; // Phone, email, or address
+}
+
+export interface DeceasedLead {
+  id: string;
+  original_owner: string;
+  asset_amount: number;
+  potential_fee: number; // 10% of asset_amount
+  source_url: string | null;
+  date_listed: string;
+  status: DeceasedLeadStatus;
+  potential_heirs: PotentialHeir[];
+  // Metadata
+  county: string | null;
+  state: string;
+  property_type: string; // Cash, Securities, Safe Deposit, etc.
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function createDeceasedLeadsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS deceased_leads (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      original_owner TEXT NOT NULL,
+      asset_amount DECIMAL(12, 2) NOT NULL,
+      potential_fee DECIMAL(12, 2) NOT NULL,
+      source_url TEXT,
+      date_listed DATE NOT NULL,
+      status TEXT DEFAULT 'new',
+      potential_heirs JSONB DEFAULT '[]'::jsonb,
+      county TEXT,
+      state TEXT DEFAULT 'CA',
+      property_type TEXT DEFAULT 'Cash',
+      notes TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  
+  // Create indexes
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_deceased_leads_status ON deceased_leads(status);
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_deceased_leads_state ON deceased_leads(state);
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_deceased_leads_amount ON deceased_leads(asset_amount DESC);
+  `;
+}
+
+export async function getDeceasedLeads(filters?: {
+  status?: DeceasedLeadStatus | string;
+  state?: string;
+  minAmount?: number;
+  limit?: number;
+}): Promise<DeceasedLead[]> {
+  const { status, state, minAmount = 1000, limit = 100 } = filters || {};
+  
+  let result;
+  
+  // Filter by status if provided and not 'all'
+  if (status && status !== 'all') {
+    result = await sql`
+      SELECT * FROM deceased_leads 
+      WHERE asset_amount >= ${minAmount}
+      AND status = ${status}
+      ORDER BY asset_amount DESC
+      LIMIT ${limit}
+    `;
+  } else if (state && state !== 'all') {
+    // Filter by state if provided and not 'all'
+    result = await sql`
+      SELECT * FROM deceased_leads 
+      WHERE asset_amount >= ${minAmount}
+      AND state = ${state}
+      ORDER BY asset_amount DESC
+      LIMIT ${limit}
+    `;
+  } else {
+    // No specific filters, return all above minAmount
+    result = await sql`
+      SELECT * FROM deceased_leads 
+      WHERE asset_amount >= ${minAmount}
+      ORDER BY asset_amount DESC
+      LIMIT ${limit}
+    `;
+  }
+  
+  return result.rows.map(row => ({
+    ...row,
+    potential_heirs: row.potential_heirs || [],
+  })) as DeceasedLead[];
+}
+
+export async function getDeceasedLead(id: string): Promise<DeceasedLead | null> {
+  const result = await sql`
+    SELECT * FROM deceased_leads WHERE id = ${id};
+  `;
+  if (result.rows[0]) {
+    return {
+      ...result.rows[0],
+      potential_heirs: result.rows[0].potential_heirs || [],
+    } as DeceasedLead;
+  }
+  return null;
+}
+
+export async function saveDeceasedLead(lead: Omit<DeceasedLead, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+  const result = await sql`
+    INSERT INTO deceased_leads (
+      original_owner, asset_amount, potential_fee, source_url, date_listed,
+      status, potential_heirs, county, state, property_type, notes
+    )
+    VALUES (
+      ${lead.original_owner}, ${lead.asset_amount}, ${lead.potential_fee},
+      ${lead.source_url}, ${lead.date_listed}, ${lead.status},
+      ${JSON.stringify(lead.potential_heirs)}::jsonb,
+      ${lead.county}, ${lead.state}, ${lead.property_type}, ${lead.notes}
+    )
+    RETURNING id;
+  `;
+  return result.rows[0].id;
+}
+
+export async function updateDeceasedLeadStatus(id: string, status: DeceasedLeadStatus) {
+  await sql`
+    UPDATE deceased_leads
+    SET status = ${status}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id};
+  `;
+}
+
+export async function updateDeceasedLeadHeirs(id: string, heirs: PotentialHeir[]) {
+  await sql`
+    UPDATE deceased_leads
+    SET potential_heirs = ${JSON.stringify(heirs)}::jsonb, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id};
+  `;
+}
+
+export async function bulkInsertDeceasedLeads(leads: Array<Omit<DeceasedLead, 'id' | 'created_at' | 'updated_at'>>): Promise<number> {
+  let inserted = 0;
+  
+  for (const lead of leads) {
+    try {
+      await saveDeceasedLead(lead);
+      inserted++;
+    } catch (error) {
+      console.error(`Failed to insert deceased lead: ${lead.original_owner}`, error);
+    }
+  }
+  
+  return inserted;
+}
+
+export async function deleteDeceasedLead(id: string) {
+  await sql`
+    DELETE FROM deceased_leads WHERE id = ${id};
+  `;
+}
+
+export async function getDeceasedLeadStats() {
+  const result = await sql`
+    SELECT 
+      COUNT(*) as total_leads,
+      SUM(asset_amount) as total_value,
+      SUM(potential_fee) as total_fees,
+      COUNT(CASE WHEN status = 'new' THEN 1 END) as new_count,
+      COUNT(CASE WHEN status = 'contacted' THEN 1 END) as contacted_count,
+      COUNT(CASE WHEN status = 'claimed' THEN 1 END) as claimed_count,
+      SUM(CASE WHEN status = 'claimed' THEN potential_fee ELSE 0 END) as claimed_fees
+    FROM deceased_leads;
+  `;
+  return result.rows[0];
+}
+

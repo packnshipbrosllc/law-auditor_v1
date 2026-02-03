@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
-  TrendingUp
+  TrendingUp,
+  Skull
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -38,6 +39,7 @@ export default function AdminSidebar() {
 
   const recoveryLinks = [
     { href: '/admin/recovery', label: 'Whale Dashboard', icon: LayoutDashboard },
+    { href: '/admin/recovery/deceased-leads', label: 'Deceased Leads', icon: Skull },
     { href: '/admin/recovery/leads', label: 'Asset Leads', icon: Coins },
     { href: '/admin/recovery/outreach', label: 'Outreach Queue', icon: Users },
     { href: '/admin/recovery/contracts', label: 'Contracts', icon: FileSpreadsheet },
