@@ -637,3 +637,197 @@ export async function getDeceasedLeadModuleStats(minBalance: number = 10000) {
   return result.rows[0];
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// USER SETTINGS (Investigator Profile)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface UserSettings {
+  id: string;
+  user_id: string; // Clerk user ID
+  // Investigator Registration
+  investigator_registration_number: string | null;
+  registration_state: string | null;
+  registration_expiry: string | null;
+  // Business Info
+  business_name: string | null;
+  business_address: string | null;
+  business_phone: string | null;
+  business_email: string | null;
+  // API Keys (encrypted in production)
+  apollo_api_key: string | null;
+  peopledatalabs_api_key: string | null;
+  // Preferences
+  default_fee_percentage: number;
+  default_min_balance: number;
+  auto_fill_contracts: boolean;
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export async function createUserSettingsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_settings (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL UNIQUE,
+      investigator_registration_number TEXT,
+      registration_state TEXT DEFAULT 'CA',
+      registration_expiry DATE,
+      business_name TEXT,
+      business_address TEXT,
+      business_phone TEXT,
+      business_email TEXT,
+      apollo_api_key TEXT,
+      peopledatalabs_api_key TEXT,
+      default_fee_percentage DECIMAL(5, 2) DEFAULT 10.00,
+      default_min_balance DECIMAL(12, 2) DEFAULT 10000.00,
+      auto_fill_contracts BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+  `;
+}
+
+export async function getUserSettings(userId: string): Promise<UserSettings | null> {
+  const result = await sql`
+    SELECT * FROM user_settings WHERE user_id = ${userId};
+  `;
+  return result.rows[0] as UserSettings || null;
+}
+
+export async function saveUserSettings(
+  userId: string,
+  settings: Partial<Omit<UserSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+): Promise<string> {
+  const result = await sql`
+    INSERT INTO user_settings (
+      user_id,
+      investigator_registration_number,
+      registration_state,
+      registration_expiry,
+      business_name,
+      business_address,
+      business_phone,
+      business_email,
+      apollo_api_key,
+      peopledatalabs_api_key,
+      default_fee_percentage,
+      default_min_balance,
+      auto_fill_contracts
+    )
+    VALUES (
+      ${userId},
+      ${settings.investigator_registration_number || null},
+      ${settings.registration_state || 'CA'},
+      ${settings.registration_expiry || null},
+      ${settings.business_name || null},
+      ${settings.business_address || null},
+      ${settings.business_phone || null},
+      ${settings.business_email || null},
+      ${settings.apollo_api_key || null},
+      ${settings.peopledatalabs_api_key || null},
+      ${settings.default_fee_percentage || 10.00},
+      ${settings.default_min_balance || 10000.00},
+      ${settings.auto_fill_contracts !== false}
+    )
+    ON CONFLICT (user_id) DO UPDATE SET
+      investigator_registration_number = COALESCE(EXCLUDED.investigator_registration_number, user_settings.investigator_registration_number),
+      registration_state = COALESCE(EXCLUDED.registration_state, user_settings.registration_state),
+      registration_expiry = COALESCE(EXCLUDED.registration_expiry, user_settings.registration_expiry),
+      business_name = COALESCE(EXCLUDED.business_name, user_settings.business_name),
+      business_address = COALESCE(EXCLUDED.business_address, user_settings.business_address),
+      business_phone = COALESCE(EXCLUDED.business_phone, user_settings.business_phone),
+      business_email = COALESCE(EXCLUDED.business_email, user_settings.business_email),
+      apollo_api_key = COALESCE(EXCLUDED.apollo_api_key, user_settings.apollo_api_key),
+      peopledatalabs_api_key = COALESCE(EXCLUDED.peopledatalabs_api_key, user_settings.peopledatalabs_api_key),
+      default_fee_percentage = COALESCE(EXCLUDED.default_fee_percentage, user_settings.default_fee_percentage),
+      default_min_balance = COALESCE(EXCLUDED.default_min_balance, user_settings.default_min_balance),
+      auto_fill_contracts = COALESCE(EXCLUDED.auto_fill_contracts, user_settings.auto_fill_contracts),
+      updated_at = CURRENT_TIMESTAMP
+    RETURNING id;
+  `;
+  return result.rows[0].id;
+}
+
+export async function updateUserSettings(
+  userId: string,
+  updates: Partial<Omit<UserSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+): Promise<void> {
+  // Build dynamic update
+  const setClauses: string[] = [];
+  const values: (string | number | boolean | null)[] = [];
+  
+  if (updates.investigator_registration_number !== undefined) {
+    setClauses.push(`investigator_registration_number = $${setClauses.length + 2}`);
+    values.push(updates.investigator_registration_number);
+  }
+  if (updates.registration_state !== undefined) {
+    setClauses.push(`registration_state = $${setClauses.length + 2}`);
+    values.push(updates.registration_state);
+  }
+  if (updates.registration_expiry !== undefined) {
+    setClauses.push(`registration_expiry = $${setClauses.length + 2}`);
+    values.push(updates.registration_expiry);
+  }
+  if (updates.business_name !== undefined) {
+    setClauses.push(`business_name = $${setClauses.length + 2}`);
+    values.push(updates.business_name);
+  }
+  if (updates.business_address !== undefined) {
+    setClauses.push(`business_address = $${setClauses.length + 2}`);
+    values.push(updates.business_address);
+  }
+  if (updates.business_phone !== undefined) {
+    setClauses.push(`business_phone = $${setClauses.length + 2}`);
+    values.push(updates.business_phone);
+  }
+  if (updates.business_email !== undefined) {
+    setClauses.push(`business_email = $${setClauses.length + 2}`);
+    values.push(updates.business_email);
+  }
+  if (updates.default_fee_percentage !== undefined) {
+    setClauses.push(`default_fee_percentage = $${setClauses.length + 2}`);
+    values.push(updates.default_fee_percentage);
+  }
+  if (updates.default_min_balance !== undefined) {
+    setClauses.push(`default_min_balance = $${setClauses.length + 2}`);
+    values.push(updates.default_min_balance);
+  }
+  if (updates.auto_fill_contracts !== undefined) {
+    setClauses.push(`auto_fill_contracts = $${setClauses.length + 2}`);
+    values.push(updates.auto_fill_contracts);
+  }
+  
+  if (setClauses.length === 0) return;
+  
+  setClauses.push('updated_at = CURRENT_TIMESTAMP');
+  
+  // Use simple update for common fields
+  await sql`
+    UPDATE user_settings
+    SET 
+      investigator_registration_number = ${updates.investigator_registration_number ?? null},
+      registration_state = ${updates.registration_state ?? null},
+      registration_expiry = ${updates.registration_expiry ?? null},
+      business_name = ${updates.business_name ?? null},
+      business_address = ${updates.business_address ?? null},
+      business_phone = ${updates.business_phone ?? null},
+      business_email = ${updates.business_email ?? null},
+      default_fee_percentage = ${updates.default_fee_percentage ?? 10.00},
+      default_min_balance = ${updates.default_min_balance ?? 10000.00},
+      auto_fill_contracts = ${updates.auto_fill_contracts ?? true},
+      updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = ${userId};
+  `;
+}
+
+export async function getInvestigatorNumber(userId: string): Promise<string | null> {
+  const result = await sql`
+    SELECT investigator_registration_number FROM user_settings WHERE user_id = ${userId};
+  `;
+  return result.rows[0]?.investigator_registration_number || null;
+}
