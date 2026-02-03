@@ -26,10 +26,12 @@ import {
   Gavel,
   Shield,
   BookOpen,
+  UserSearch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { DeceasedLeadModule, ReportedHeir } from '@/lib/db';
+import ResearchPanel from '@/components/ResearchPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SAMPLE DATA (for development)
@@ -147,6 +149,7 @@ export default function LeadDetailPage() {
   const [lead, setLead] = useState<DeceasedLeadModule | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
+  const [isResearchPanelOpen, setIsResearchPanelOpen] = useState(false);
 
   // Load lead data
   useEffect(() => {
@@ -527,11 +530,42 @@ export default function LeadDetailPage() {
             </p>
           </motion.div>
 
-          {/* Quick Actions */}
+          {/* Research Heirs - PRIMARY ACTION */}
           <motion.div
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
+            className="bg-emerald-950/30 border border-emerald-500/30 rounded p-6"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <UserSearch className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-sm font-bold text-emerald-400">
+                Research Heirs
+              </h3>
+            </div>
+            
+            <p className="text-xs text-slate-400 mb-4">
+              Search People Data Labs for potential relatives and heirs of the decedent.
+            </p>
+
+            <Button
+              onClick={() => setIsResearchPanelOpen(true)}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+            >
+              <UserSearch className="w-4 h-4 mr-2" />
+              Research Heirs
+            </Button>
+
+            <p className="text-[9px] text-slate-500 mt-3 text-center">
+              Opens Research Panel with PDL integration
+            </p>
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
             className="bg-slate-900 border border-slate-800 rounded p-6"
           >
             <h3 className="text-xs font-black uppercase tracking-[0.15em] text-white mb-4">
@@ -596,6 +630,17 @@ export default function LeadDetailPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Research Panel (Side Sheet) */}
+      <ResearchPanel
+        isOpen={isResearchPanelOpen}
+        onClose={() => setIsResearchPanelOpen(false)}
+        decedentName={lead.decedent_name}
+        county={lead.county}
+        lastKnownAddress={lead.last_known_address}
+        propertyId={lead.property_id}
+        availableBalance={lead.available_balance}
+      />
     </div>
   );
 }
