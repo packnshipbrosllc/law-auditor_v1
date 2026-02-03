@@ -20,6 +20,9 @@ import {
   AlertCircle,
   Sparkles,
   Shield,
+  Zap,
+  TrendingUp,
+  Database,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +37,39 @@ import type { PotentialHeir, HeirSearchResult } from '@/lib/peopledatalabs';
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
+
+type EnrichmentSource = 'Apollo' | 'PeopleDataLabs' | 'Manual' | 'None';
+
+interface EnrichedContactInfo {
+  full_name: string;
+  mobile_phone: string | null;
+  work_phone: string | null;
+  verified_email: string | null;
+  personal_email: string | null;
+  city: string | null;
+  state: string | null;
+  job_title: string | null;
+  company: string | null;
+  linkedin_url: string | null;
+  confidence_score: number;
+  source: EnrichmentSource;
+}
+
+interface EnrichmentResult {
+  success: boolean;
+  status: string;
+  contact: EnrichedContactInfo | null;
+  source: EnrichmentSource;
+  errors: string[];
+  api_calls_made: number;
+  apis_attempted: EnrichmentSource[];
+}
+
+interface EnrichedHeir extends PotentialHeir {
+  enrichment_source?: EnrichmentSource;
+  enrichment_status?: string;
+  enriched_contact?: EnrichedContactInfo;
+}
 
 interface ResearchPanelProps {
   isOpen: boolean;
@@ -61,15 +97,18 @@ export default function ResearchPanel({
   onSearchComplete,
 }: ResearchPanelProps) {
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<HeirSearchResult | null>(null);
+  const [searchResult, setSearchResult] = useState<(HeirSearchResult & { enrichment_providers?: EnrichmentSource[] }) | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedHeir, setSelectedHeir] = useState<PotentialHeir | null>(null);
+  const [enrichingHeirId, setEnrichingHeirId] = useState<string | null>(null);
+  const [enrichedHeirs, setEnrichedHeirs] = useState<Record<string, EnrichedContactInfo>>({});
 
   // Search for heirs
   const handleSearch = useCallback(async () => {
     setIsSearching(true);
     setSearchResult(null);
+    setEnrichedHeirs({});
 
     try {
       const response = await fetch('/api/research-heirs', {
@@ -82,7 +121,7 @@ export default function ResearchPanel({
         }),
       });
 
-      const result: HeirSearchResult = await response.json();
+      const result = await response.json();
       setSearchResult(result);
       
       if (onSearchComplete) {
@@ -103,6 +142,54 @@ export default function ResearchPanel({
       setIsSearching(false);
     }
   }, [decedentName, county, lastKnownAddress, onSearchComplete]);
+
+  // Deep enrich a specific heir using waterfall (Apollo → PDL)
+  const handleDeepEnrich = useCallback(async (heir: PotentialHeir) => {
+    setEnrichingHeirId(heir.id);
+    
+    try {
+      const response = await fetch('/api/enrich-heir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: heir.full_name,
+          last_name: heir.last_name,
+          county,
+          state: heir.state || 'California',
+          city: heir.city,
+          decedent_name: decedentName,
+          possible_relation: heir.possible_relation,
+        }),
+      });
+
+      const result: EnrichmentResult = await response.json();
+      
+      if (result.success && result.contact) {
+        setEnrichedHeirs(prev => ({
+          ...prev,
+          [heir.id]: result.contact!,
+        }));
+      }
+    } catch (error) {
+      console.error('Error enriching heir:', error);
+    } finally {
+      setEnrichingHeirId(null);
+    }
+  }, [county, decedentName]);
+
+  // Get source badge styling
+  const getSourceBadge = (source: EnrichmentSource) => {
+    switch (source) {
+      case 'Apollo':
+        return 'bg-blue-500/20 text-blue-400';
+      case 'PeopleDataLabs':
+        return 'bg-purple-500/20 text-purple-400';
+      case 'Manual':
+        return 'bg-amber-500/20 text-amber-400';
+      default:
+        return 'bg-slate-700 text-slate-400';
+    }
+  };
 
   // Copy phone number to clipboard
   const copyPhoneNumber = (phone: string, heirId: string) => {
@@ -179,11 +266,20 @@ export default function ResearchPanel({
         <div className="mt-6 space-y-6">
           {/* Search Card */}
           <div className="bg-purple-950/30 border border-purple-500/30 rounded p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <h4 className="text-sm font-bold text-purple-400">
-                People Data Labs Search
-              </h4>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <h4 className="text-sm font-bold text-purple-400">
+                  Waterfall Enrichment
+                </h4>
+              </div>
+              <div className="flex items-center gap-1">
+                <Database className="w-3 h-3 text-blue-400" />
+                <span className="text-[9px] text-blue-400">Apollo</span>
+                <span className="text-slate-600 mx-1">→</span>
+                <Database className="w-3 h-3 text-purple-400" />
+                <span className="text-[9px] text-purple-400">PDL</span>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
@@ -218,6 +314,15 @@ export default function ResearchPanel({
                 </>
               )}
             </Button>
+            
+            {searchResult?.enrichment_providers && searchResult.enrichment_providers.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-slate-700">
+                <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>Active providers: {searchResult.enrichment_providers.join(', ')}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Search Results */}
@@ -369,8 +474,84 @@ export default function ResearchPanel({
                           </div>
                         )}
 
+                        {/* Enriched Contact Info (from Waterfall) */}
+                        {enrichedHeirs[heir.id] && (
+                          <div className="mb-3 p-3 bg-emerald-950/30 border border-emerald-500/30 rounded">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Zap className="w-3 h-3 text-emerald-400" />
+                              <span className="text-[10px] font-bold text-emerald-400">ENRICHED DATA</span>
+                              <span className={`px-2 py-0.5 text-[9px] font-bold rounded ${getSourceBadge(enrichedHeirs[heir.id].source)}`}>
+                                via {enrichedHeirs[heir.id].source}
+                              </span>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {(enrichedHeirs[heir.id].mobile_phone || enrichedHeirs[heir.id].work_phone) && (
+                                <div className="flex flex-wrap gap-2">
+                                  {enrichedHeirs[heir.id].mobile_phone && (
+                                    <div className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded">
+                                      <Phone className="w-3 h-3 text-emerald-400" />
+                                      <a
+                                        href={`tel:${enrichedHeirs[heir.id].mobile_phone}`}
+                                        className="text-sm text-emerald-400 hover:text-emerald-300"
+                                      >
+                                        {enrichedHeirs[heir.id].mobile_phone}
+                                      </a>
+                                      <button
+                                        onClick={() => copyPhoneNumber(enrichedHeirs[heir.id].mobile_phone!, `${heir.id}-enriched`)}
+                                        className="p-1 hover:bg-slate-700 rounded"
+                                      >
+                                        {copiedId === `${heir.id}-enriched-phone` ? (
+                                          <CheckCircle className="w-3 h-3 text-emerald-400" />
+                                        ) : (
+                                          <Copy className="w-3 h-3 text-slate-500 hover:text-white" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {(enrichedHeirs[heir.id].verified_email || enrichedHeirs[heir.id].personal_email) && (
+                                <div className="flex flex-wrap gap-2">
+                                  {enrichedHeirs[heir.id].verified_email && (
+                                    <a
+                                      href={`mailto:${enrichedHeirs[heir.id].verified_email}`}
+                                      className="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded text-sm text-blue-400 hover:text-blue-300"
+                                    >
+                                      <Mail className="w-3 h-3" />
+                                      {enrichedHeirs[heir.id].verified_email}
+                                      <CheckCircle className="w-3 h-3 text-emerald-400" />
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Actions */}
                         <div className="flex items-center gap-2 pt-3 border-t border-slate-700">
+                          {/* Deep Enrich Button */}
+                          {!enrichedHeirs[heir.id] && (
+                            <Button
+                              onClick={() => handleDeepEnrich(heir)}
+                              disabled={enrichingHeirId === heir.id}
+                              size="sm"
+                              variant="outline"
+                              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-[10px]"
+                            >
+                              {enrichingHeirId === heir.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <Zap className="w-3 h-3 mr-1" />
+                                  Deep Enrich
+                                </>
+                              )}
+                            </Button>
+                          )}
+                          
                           {heir.linkedin_url && (
                             <a
                               href={heir.linkedin_url}

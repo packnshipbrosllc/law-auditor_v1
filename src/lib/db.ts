@@ -1187,3 +1187,200 @@ export async function getImportBatchSummary(batchId: string) {
   `;
   return result.rows[0];
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENRICHMENT ROI TRACKING
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type EnrichmentSource = 'Apollo' | 'PeopleDataLabs' | 'Manual' | 'None';
+
+export interface EnrichmentAttempt {
+  id: string;
+  user_id: string;
+  heir_name: string;
+  decedent_name: string | null;
+  apis_attempted: EnrichmentSource[];
+  successful_source: EnrichmentSource;
+  success: boolean;
+  has_phone: boolean;
+  has_email: boolean;
+  created_at: string;
+}
+
+/**
+ * Create enrichment attempts table for ROI tracking.
+ */
+export async function createEnrichmentAttemptsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS enrichment_attempts (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL,
+      heir_name TEXT NOT NULL,
+      decedent_name TEXT,
+      apis_attempted TEXT[] NOT NULL DEFAULT '{}',
+      successful_source TEXT NOT NULL DEFAULT 'None',
+      success BOOLEAN NOT NULL DEFAULT FALSE,
+      has_phone BOOLEAN NOT NULL DEFAULT FALSE,
+      has_email BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  
+  // Create indexes for analytics
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_enrichment_source ON enrichment_attempts(successful_source);
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_enrichment_user ON enrichment_attempts(user_id);
+  `;
+}
+
+/**
+ * Log an enrichment attempt for ROI tracking.
+ */
+export async function logEnrichmentAttempt(attempt: {
+  user_id: string;
+  heir_name: string;
+  decedent_name: string | null;
+  apis_attempted: EnrichmentSource[];
+  successful_source: EnrichmentSource;
+  success: boolean;
+  has_phone: boolean;
+  has_email: boolean;
+}): Promise<string> {
+  // Ensure table exists
+  await createEnrichmentAttemptsTable();
+  
+  // Convert array to PostgreSQL array literal format
+  const apisAttemptedStr = `{${attempt.apis_attempted.join(',')}}`;
+  
+  const result = await sql`
+    INSERT INTO enrichment_attempts (
+      user_id, heir_name, decedent_name, apis_attempted,
+      successful_source, success, has_phone, has_email
+    )
+    VALUES (
+      ${attempt.user_id},
+      ${attempt.heir_name},
+      ${attempt.decedent_name},
+      ${apisAttemptedStr}::text[],
+      ${attempt.successful_source},
+      ${attempt.success},
+      ${attempt.has_phone},
+      ${attempt.has_email}
+    )
+    RETURNING id;
+  `;
+  return result.rows[0].id;
+}
+
+/**
+ * Update lead with enrichment source for tracking which API found the data.
+ */
+export async function updateLeadEnrichmentSource(
+  leadId: string,
+  source: EnrichmentSource
+): Promise<void> {
+  // Try updating deceased_lead_module first
+  try {
+    await sql`
+      UPDATE deceased_lead_module
+      SET 
+        enrichment_source = ${source},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${leadId};
+    `;
+  } catch {
+    // Table might not have the column, that's ok
+  }
+  
+  // Also try whale_leads
+  try {
+    await sql`
+      UPDATE whale_leads
+      SET 
+        enrichment_status = 'Enriched',
+        enrichment_source = ${source},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${leadId};
+    `;
+  } catch {
+    // Column might not exist
+  }
+}
+
+/**
+ * Get enrichment ROI statistics.
+ * Shows which API is giving the best results.
+ */
+export async function getEnrichmentROIStats(userId?: string) {
+  const result = userId 
+    ? await sql`
+        SELECT 
+          successful_source,
+          COUNT(*) as total_attempts,
+          COUNT(CASE WHEN success THEN 1 END) as successful,
+          COUNT(CASE WHEN has_phone THEN 1 END) as with_phone,
+          COUNT(CASE WHEN has_email THEN 1 END) as with_email,
+          ROUND(COUNT(CASE WHEN success THEN 1 END)::numeric / NULLIF(COUNT(*), 0) * 100, 1) as success_rate
+        FROM enrichment_attempts
+        WHERE user_id = ${userId}
+        GROUP BY successful_source
+        ORDER BY successful DESC;
+      `
+    : await sql`
+        SELECT 
+          successful_source,
+          COUNT(*) as total_attempts,
+          COUNT(CASE WHEN success THEN 1 END) as successful,
+          COUNT(CASE WHEN has_phone THEN 1 END) as with_phone,
+          COUNT(CASE WHEN has_email THEN 1 END) as with_email,
+          ROUND(COUNT(CASE WHEN success THEN 1 END)::numeric / NULLIF(COUNT(*), 0) * 100, 1) as success_rate
+        FROM enrichment_attempts
+        GROUP BY successful_source
+        ORDER BY successful DESC;
+      `;
+  
+  return result.rows;
+}
+
+/**
+ * Get total enrichment costs estimate.
+ * Apollo: ~$0.01/record, PDL: ~$0.03/record
+ */
+export async function getEnrichmentCostEstimate(userId?: string) {
+  const result = userId
+    ? await sql`
+        SELECT 
+          COUNT(CASE WHEN 'Apollo' = ANY(apis_attempted) THEN 1 END) as apollo_calls,
+          COUNT(CASE WHEN 'PeopleDataLabs' = ANY(apis_attempted) THEN 1 END) as pdl_calls,
+          COUNT(CASE WHEN successful_source = 'Apollo' THEN 1 END) as apollo_hits,
+          COUNT(CASE WHEN successful_source = 'PeopleDataLabs' THEN 1 END) as pdl_hits
+        FROM enrichment_attempts
+        WHERE user_id = ${userId};
+      `
+    : await sql`
+        SELECT 
+          COUNT(CASE WHEN 'Apollo' = ANY(apis_attempted) THEN 1 END) as apollo_calls,
+          COUNT(CASE WHEN 'PeopleDataLabs' = ANY(apis_attempted) THEN 1 END) as pdl_calls,
+          COUNT(CASE WHEN successful_source = 'Apollo' THEN 1 END) as apollo_hits,
+          COUNT(CASE WHEN successful_source = 'PeopleDataLabs' THEN 1 END) as pdl_hits
+        FROM enrichment_attempts;
+      `;
+  
+  const row = result.rows[0];
+  const apolloCost = (row.apollo_calls || 0) * 0.01;
+  const pdlCost = (row.pdl_calls || 0) * 0.03;
+  
+  return {
+    apollo_calls: row.apollo_calls || 0,
+    apollo_hits: row.apollo_hits || 0,
+    apollo_cost: apolloCost,
+    pdl_calls: row.pdl_calls || 0,
+    pdl_hits: row.pdl_hits || 0,
+    pdl_cost: pdlCost,
+    total_cost: apolloCost + pdlCost,
+    total_hits: (row.apollo_hits || 0) + (row.pdl_hits || 0),
+    cost_per_hit: (apolloCost + pdlCost) / Math.max((row.apollo_hits || 0) + (row.pdl_hits || 0), 1),
+  };
+}
