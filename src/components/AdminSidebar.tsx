@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Skull,
   Crown,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -40,6 +41,7 @@ export default function AdminSidebar() {
 
   const recoveryLinks = [
     { href: '/admin/recovery', label: 'Whale Dashboard', icon: LayoutDashboard },
+    { href: '/admin/recovery/import', label: 'Import CSV', icon: Upload },
     { href: '/admin/recovery/deceased', label: 'Deceased Module', icon: Crown },
     { href: '/admin/recovery/deceased-leads', label: 'Deceased Leads', icon: Skull },
     { href: '/admin/recovery/leads', label: 'Asset Leads', icon: Coins },

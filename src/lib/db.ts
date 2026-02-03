@@ -831,3 +831,359 @@ export async function getInvestigatorNumber(userId: string): Promise<string | nu
   `;
   return result.rows[0]?.investigator_registration_number || null;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESTATE LEAD FINAL (Estate Ingestion - Final Schema)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Status enum for estate leads (Final ingestion).
+ * Tracks the full lifecycle from discovery to payment.
+ */
+export type EstateLeadStatus = 'NEW' | 'RESEARCHING' | 'CLAIM_FILED' | 'PAID';
+
+/**
+ * Priority level for leads based on scoring algorithm.
+ */
+export type LeadPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+
+/**
+ * Heir information from CSV or enrichment.
+ */
+export interface HeirInfo {
+  name: string;
+  relation: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  verified: boolean;
+}
+
+/**
+ * EstateLead - Final schema for estate ingestion.
+ * 
+ * Based on California SCO "Estates of Deceased Persons" file format
+ * and CCP 1582 legal requirements from Investigator Handbook.
+ */
+export interface EstateLead {
+  id: string;
+  
+  // ── Core Fields (from CSV) ──────────────────────────────────────────────
+  property_id: string;              // Unique SCO property identifier
+  owner_name: string;               // Decedent's name
+  amount: number;                   // Current balance (must be >= $10,000)
+  county: string;                   // California county
+  escheat_date: string | null;      // Date property escheats to state
+  
+  // ── Additional SCO Fields ───────────────────────────────────────────────
+  property_type: string;            // Cash, Securities, Safe Deposit, etc.
+  holder_name: string | null;       // Bank, insurance company, etc.
+  last_known_address: string | null;
+  relation_to_property: string;     // "Decedent", "Heir", "Beneficiary"
+  date_reported: string;            // Date reported to SCO
+  
+  // ── Heir Information ────────────────────────────────────────────────────
+  heirs: HeirInfo[];                // Parsed heir data
+  heirs_listed: boolean;            // Quick check: any heirs on file?
+  
+  // ── Lead Scoring ────────────────────────────────────────────────────────
+  priority: LeadPriority;           // HIGH, MEDIUM, LOW
+  priority_reason: string | null;   // Why this priority was assigned
+  potential_fee: number;            // 10% of amount (CCP 1582 cap)
+  
+  // ── Status Tracking ─────────────────────────────────────────────────────
+  status: EstateLeadStatus;       // NEW, RESEARCHING, CLAIM_FILED, PAID
+  status_updated_at: string | null;
+  notes: string | null;
+  
+  // ── Metadata ────────────────────────────────────────────────────────────
+  imported_by: string;              // Clerk user ID who imported
+  import_batch_id: string | null;   // Batch identifier for bulk imports
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Create the deceased_leads table with all required indexes.
+ */
+export async function createDeceasedLeadsTableFinal() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS deceased_leads_final (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      
+      -- Core Fields
+      property_id TEXT NOT NULL UNIQUE,
+      owner_name TEXT NOT NULL,
+      amount DECIMAL(12, 2) NOT NULL,
+      county TEXT NOT NULL,
+      escheat_date DATE,
+      
+      -- Additional SCO Fields
+      property_type TEXT DEFAULT 'Cash',
+      holder_name TEXT,
+      last_known_address TEXT,
+      relation_to_property TEXT DEFAULT 'Decedent',
+      date_reported DATE,
+      
+      -- Heir Information
+      heirs JSONB DEFAULT '[]'::jsonb,
+      heirs_listed BOOLEAN DEFAULT FALSE,
+      
+      -- Lead Scoring
+      priority TEXT DEFAULT 'MEDIUM',
+      priority_reason TEXT,
+      potential_fee DECIMAL(12, 2) NOT NULL,
+      
+      -- Status Tracking
+      status TEXT DEFAULT 'NEW',
+      status_updated_at TIMESTAMP WITH TIME ZONE,
+      notes TEXT,
+      
+      -- Metadata
+      imported_by TEXT NOT NULL,
+      import_batch_id TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  
+  // Create indexes for common queries
+  await sql`CREATE INDEX IF NOT EXISTS idx_dlf_property_id ON deceased_leads_final(property_id);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dlf_status ON deceased_leads_final(status);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dlf_priority ON deceased_leads_final(priority);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dlf_county ON deceased_leads_final(county);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dlf_amount ON deceased_leads_final(amount DESC);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dlf_imported_by ON deceased_leads_final(imported_by);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dlf_batch ON deceased_leads_final(import_batch_id);`;
+}
+
+/**
+ * Check if a property_id already exists (for de-duplication).
+ */
+export async function propertyIdExists(propertyId: string): Promise<boolean> {
+  const result = await sql`
+    SELECT 1 FROM deceased_leads_final WHERE property_id = ${propertyId} LIMIT 1;
+  `;
+  return result.rows.length > 0;
+}
+
+/**
+ * Get all existing property IDs for batch de-duplication.
+ */
+export async function getExistingPropertyIds(): Promise<Set<string>> {
+  const result = await sql`SELECT property_id FROM deceased_leads_final;`;
+  return new Set(result.rows.map(r => r.property_id));
+}
+
+/**
+ * Insert a single estate lead.
+ */
+export async function insertEstateLead(
+  lead: Omit<EstateLead, 'id' | 'created_at' | 'updated_at'>
+): Promise<string> {
+  const result = await sql`
+    INSERT INTO deceased_leads_final (
+      property_id, owner_name, amount, county, escheat_date,
+      property_type, holder_name, last_known_address, relation_to_property, date_reported,
+      heirs, heirs_listed, priority, priority_reason, potential_fee,
+      status, status_updated_at, notes, imported_by, import_batch_id
+    )
+    VALUES (
+      ${lead.property_id}, ${lead.owner_name}, ${lead.amount}, ${lead.county}, ${lead.escheat_date},
+      ${lead.property_type}, ${lead.holder_name}, ${lead.last_known_address}, 
+      ${lead.relation_to_property}, ${lead.date_reported},
+      ${JSON.stringify(lead.heirs)}::jsonb, ${lead.heirs_listed},
+      ${lead.priority}, ${lead.priority_reason}, ${lead.potential_fee},
+      ${lead.status}, ${lead.status_updated_at}, ${lead.notes},
+      ${lead.imported_by}, ${lead.import_batch_id}
+    )
+    ON CONFLICT (property_id) DO NOTHING
+    RETURNING id;
+  `;
+  return result.rows[0]?.id || '';
+}
+
+/**
+ * Bulk insert estate leads with de-duplication.
+ * Returns count of successfully inserted leads.
+ */
+export async function bulkInsertEstateLeads(
+  leads: Array<Omit<EstateLead, 'id' | 'created_at' | 'updated_at'>>
+): Promise<{ inserted: number; skipped: number; errors: string[] }> {
+  const existingIds = await getExistingPropertyIds();
+  let inserted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const lead of leads) {
+    // De-duplicate: Skip if property_id already exists
+    if (existingIds.has(lead.property_id)) {
+      skipped++;
+      continue;
+    }
+
+    try {
+      const id = await insertEstateLead(lead);
+      if (id) {
+        inserted++;
+        existingIds.add(lead.property_id); // Track for this batch
+      } else {
+        skipped++; // ON CONFLICT DO NOTHING triggered
+      }
+    } catch (error) {
+      errors.push(`${lead.property_id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  return { inserted, skipped, errors };
+}
+
+/**
+ * Get estate leads with filters.
+ */
+export async function getEstateLeads(filters?: {
+  status?: EstateLeadStatus | 'ALL';
+  priority?: LeadPriority | 'ALL';
+  county?: string;
+  minAmount?: number;
+  importBatchId?: string;
+  limit?: number;
+}): Promise<EstateLead[]> {
+  const {
+    status,
+    priority,
+    county,
+    minAmount = 10000,
+    importBatchId,
+    limit = 100,
+  } = filters || {};
+
+  let result;
+
+  if (importBatchId) {
+    result = await sql`
+      SELECT * FROM deceased_leads_final
+      WHERE import_batch_id = ${importBatchId}
+      ORDER BY amount DESC
+      LIMIT ${limit}
+    `;
+  } else if (status && status !== 'ALL') {
+    result = await sql`
+      SELECT * FROM deceased_leads_final
+      WHERE status = ${status} AND amount >= ${minAmount}
+      ORDER BY amount DESC
+      LIMIT ${limit}
+    `;
+  } else if (priority && priority !== 'ALL') {
+    result = await sql`
+      SELECT * FROM deceased_leads_final
+      WHERE priority = ${priority} AND amount >= ${minAmount}
+      ORDER BY amount DESC
+      LIMIT ${limit}
+    `;
+  } else if (county) {
+    result = await sql`
+      SELECT * FROM deceased_leads_final
+      WHERE county = ${county} AND amount >= ${minAmount}
+      ORDER BY amount DESC
+      LIMIT ${limit}
+    `;
+  } else {
+    result = await sql`
+      SELECT * FROM deceased_leads_final
+      WHERE amount >= ${minAmount}
+      ORDER BY amount DESC
+      LIMIT ${limit}
+    `;
+  }
+
+  return result.rows.map(row => ({
+    ...row,
+    heirs: row.heirs || [],
+  })) as EstateLead[];
+}
+
+/**
+ * Update estate lead status.
+ */
+export async function updateEstateLeadStatus(
+  id: string,
+  status: EstateLeadStatus,
+  notes?: string
+): Promise<void> {
+  await sql`
+    UPDATE deceased_leads_final
+    SET 
+      status = ${status},
+      status_updated_at = CURRENT_TIMESTAMP,
+      notes = COALESCE(${notes || null}, notes),
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id};
+  `;
+}
+
+/**
+ * Get statistics for estate leads.
+ */
+export async function getEstateLeadStats(importBatchId?: string) {
+  const result = importBatchId
+    ? await sql`
+        SELECT 
+          COUNT(*) as total_leads,
+          SUM(amount) as total_value,
+          SUM(potential_fee) as total_potential_fees,
+          COUNT(CASE WHEN status = 'NEW' THEN 1 END) as new_count,
+          COUNT(CASE WHEN status = 'RESEARCHING' THEN 1 END) as researching_count,
+          COUNT(CASE WHEN status = 'CLAIM_FILED' THEN 1 END) as claim_filed_count,
+          COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paid_count,
+          COUNT(CASE WHEN priority = 'HIGH' THEN 1 END) as high_priority_count,
+          SUM(CASE WHEN priority = 'HIGH' THEN potential_fee ELSE 0 END) as high_priority_fees,
+          COUNT(CASE WHEN heirs_listed = FALSE THEN 1 END) as no_heirs_count
+        FROM deceased_leads_final
+        WHERE import_batch_id = ${importBatchId};
+      `
+    : await sql`
+        SELECT 
+          COUNT(*) as total_leads,
+          SUM(amount) as total_value,
+          SUM(potential_fee) as total_potential_fees,
+          COUNT(CASE WHEN status = 'NEW' THEN 1 END) as new_count,
+          COUNT(CASE WHEN status = 'RESEARCHING' THEN 1 END) as researching_count,
+          COUNT(CASE WHEN status = 'CLAIM_FILED' THEN 1 END) as claim_filed_count,
+          COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paid_count,
+          COUNT(CASE WHEN priority = 'HIGH' THEN 1 END) as high_priority_count,
+          SUM(CASE WHEN priority = 'HIGH' THEN potential_fee ELSE 0 END) as high_priority_fees,
+          COUNT(CASE WHEN heirs_listed = FALSE THEN 1 END) as no_heirs_count
+        FROM deceased_leads_final;
+      `;
+
+  return result.rows[0];
+}
+
+/**
+ * Get unique counties from imported leads.
+ */
+export async function getDeceasedLeadCounties(): Promise<string[]> {
+  const result = await sql`
+    SELECT DISTINCT county FROM deceased_leads_final ORDER BY county;
+  `;
+  return result.rows.map(r => r.county);
+}
+
+/**
+ * Get import batch summary.
+ */
+export async function getImportBatchSummary(batchId: string) {
+  const result = await sql`
+    SELECT 
+      COUNT(*) as total_imported,
+      SUM(amount) as total_value,
+      SUM(potential_fee) as total_fees,
+      COUNT(CASE WHEN priority = 'HIGH' THEN 1 END) as high_priority,
+      MIN(created_at) as import_started,
+      MAX(created_at) as import_completed
+    FROM deceased_leads_final
+    WHERE import_batch_id = ${batchId};
+  `;
+  return result.rows[0];
+}
