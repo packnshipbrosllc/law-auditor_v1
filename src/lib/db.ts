@@ -442,3 +442,198 @@ export async function getDeceasedLeadStats() {
   return result.rows[0];
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DECEASED LEADS MODULE (Refined Model)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type DeceasedModuleStatus = 'New' | 'Skip-Tracing' | 'Contacted';
+
+export interface ReportedHeir {
+  name: string;
+  relation: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  confidence?: number; // 0-100 confidence score
+  source?: string; // e.g., "SCO Database", "PeopleDataLabs", "Manual"
+}
+
+export interface DeceasedLeadModule {
+  id: string;
+  property_id: string;
+  decedent_name: string;
+  available_balance: number;
+  reported_heirs: ReportedHeir[];
+  status: DeceasedModuleStatus;
+  // Additional useful fields
+  last_known_address: string | null;
+  date_of_death: string | null;
+  date_reported: string;
+  property_type: string;
+  holder_name: string | null; // Bank, insurance company, etc.
+  state: string;
+  county: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function createDeceasedLeadModuleTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS deceased_lead_module (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      property_id TEXT NOT NULL UNIQUE,
+      decedent_name TEXT NOT NULL,
+      available_balance DECIMAL(12, 2) NOT NULL,
+      reported_heirs JSONB DEFAULT '[]'::jsonb,
+      status TEXT DEFAULT 'New',
+      last_known_address TEXT,
+      date_of_death DATE,
+      date_reported DATE NOT NULL,
+      property_type TEXT DEFAULT 'Cash',
+      holder_name TEXT,
+      state TEXT DEFAULT 'CA',
+      county TEXT,
+      notes TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  
+  // Create indexes for common filters
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_dlm_status ON deceased_lead_module(status);
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_dlm_balance ON deceased_lead_module(available_balance DESC);
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_dlm_state ON deceased_lead_module(state);
+  `;
+}
+
+export async function getDeceasedLeadModules(filters?: {
+  status?: DeceasedModuleStatus | 'all';
+  state?: string;
+  minBalance?: number;
+  limit?: number;
+}): Promise<DeceasedLeadModule[]> {
+  const { status, state, minBalance = 10000, limit = 100 } = filters || {};
+  
+  let result;
+  
+  if (status && status !== 'all') {
+    result = await sql`
+      SELECT * FROM deceased_lead_module 
+      WHERE available_balance >= ${minBalance}
+      AND status = ${status}
+      ORDER BY available_balance DESC
+      LIMIT ${limit}
+    `;
+  } else if (state && state !== 'all') {
+    result = await sql`
+      SELECT * FROM deceased_lead_module 
+      WHERE available_balance >= ${minBalance}
+      AND state = ${state}
+      ORDER BY available_balance DESC
+      LIMIT ${limit}
+    `;
+  } else {
+    result = await sql`
+      SELECT * FROM deceased_lead_module 
+      WHERE available_balance >= ${minBalance}
+      ORDER BY available_balance DESC
+      LIMIT ${limit}
+    `;
+  }
+  
+  return result.rows.map(row => ({
+    ...row,
+    reported_heirs: row.reported_heirs || [],
+  })) as DeceasedLeadModule[];
+}
+
+export async function getDeceasedLeadModule(id: string): Promise<DeceasedLeadModule | null> {
+  const result = await sql`
+    SELECT * FROM deceased_lead_module WHERE id = ${id};
+  `;
+  if (result.rows[0]) {
+    return {
+      ...result.rows[0],
+      reported_heirs: result.rows[0].reported_heirs || [],
+    } as DeceasedLeadModule;
+  }
+  return null;
+}
+
+export async function saveDeceasedLeadModule(lead: Omit<DeceasedLeadModule, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+  const result = await sql`
+    INSERT INTO deceased_lead_module (
+      property_id, decedent_name, available_balance, reported_heirs, status,
+      last_known_address, date_of_death, date_reported, property_type,
+      holder_name, state, county, notes
+    )
+    VALUES (
+      ${lead.property_id}, ${lead.decedent_name}, ${lead.available_balance},
+      ${JSON.stringify(lead.reported_heirs)}::jsonb, ${lead.status},
+      ${lead.last_known_address}, ${lead.date_of_death}, ${lead.date_reported},
+      ${lead.property_type}, ${lead.holder_name}, ${lead.state}, ${lead.county}, ${lead.notes}
+    )
+    ON CONFLICT (property_id) DO UPDATE SET
+      decedent_name = EXCLUDED.decedent_name,
+      available_balance = EXCLUDED.available_balance,
+      reported_heirs = EXCLUDED.reported_heirs,
+      updated_at = CURRENT_TIMESTAMP
+    RETURNING id;
+  `;
+  return result.rows[0].id;
+}
+
+export async function updateDeceasedLeadModuleStatus(id: string, status: DeceasedModuleStatus) {
+  await sql`
+    UPDATE deceased_lead_module
+    SET status = ${status}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id};
+  `;
+}
+
+export async function updateDeceasedLeadModuleHeirs(id: string, heirs: ReportedHeir[]) {
+  await sql`
+    UPDATE deceased_lead_module
+    SET reported_heirs = ${JSON.stringify(heirs)}::jsonb, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id};
+  `;
+}
+
+export async function bulkInsertDeceasedLeadModules(leads: Array<Omit<DeceasedLeadModule, 'id' | 'created_at' | 'updated_at'>>): Promise<number> {
+  let inserted = 0;
+  
+  for (const lead of leads) {
+    try {
+      await saveDeceasedLeadModule(lead);
+      inserted++;
+    } catch (error) {
+      console.error(`Failed to insert deceased lead module: ${lead.decedent_name}`, error);
+    }
+  }
+  
+  return inserted;
+}
+
+export async function getDeceasedLeadModuleStats(minBalance: number = 10000) {
+  const result = await sql`
+    SELECT 
+      COUNT(*) as total_leads,
+      SUM(available_balance) as total_value,
+      SUM(available_balance * 0.10) as total_potential_fees,
+      COUNT(CASE WHEN status = 'New' THEN 1 END) as new_count,
+      COUNT(CASE WHEN status = 'Skip-Tracing' THEN 1 END) as skip_tracing_count,
+      COUNT(CASE WHEN status = 'Contacted' THEN 1 END) as contacted_count,
+      COUNT(CASE WHEN available_balance >= 25000 THEN 1 END) as gold_count,
+      SUM(CASE WHEN available_balance >= 25000 THEN available_balance * 0.10 ELSE 0 END) as gold_fees
+    FROM deceased_lead_module
+    WHERE available_balance >= ${minBalance};
+  `;
+  return result.rows[0];
+}
+
